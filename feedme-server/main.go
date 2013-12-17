@@ -156,7 +156,6 @@ func main() {
 	p.AddGroup("Server arguments", "", &opts)
 
 	_, err = p.ParseArgs(os.Args)
-
 	if err != nil {
 		if e, ok := err.(*flags.Error); !ok || e.Type != flags.ErrHelp {
 			panic(err)
@@ -168,7 +167,6 @@ func main() {
 	}
 
 	db, err = backend.NewBackend("postgresql")
-
 	if err != nil {
 		panic(err)
 	}
@@ -180,7 +178,6 @@ func main() {
 	}
 
 	err = db.Init(params)
-
 	if err != nil {
 		panic(err)
 	}

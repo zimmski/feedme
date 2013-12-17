@@ -5,9 +5,10 @@ import (
 )
 
 type Feed struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Id        int    `json:"id"`
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	Transform string `json:"transform"`
 }
 
 type Item struct {

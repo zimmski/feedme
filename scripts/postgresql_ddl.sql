@@ -12,6 +12,7 @@ CREATE TABLE feeds (
 	id SERIAL,
 	name TEXT NOT NULL,
 	url TEXT NOT NULL,
+	transform TEXT NOT NULL,
 	PRIMARY KEY(id),
 	UNIQUE(name)
 );

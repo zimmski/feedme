@@ -10,6 +10,8 @@ import (
 type Backend interface {
 	Init(params BackendParameters) error
 
+	CreateItems(feed *feedme.Feed, items []feedme.Item) error
+
 	FindFeed(feedName string) (*feedme.Feed, error)
 
 	SearchFeeds() ([]feedme.Feed, error)
