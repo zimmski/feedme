@@ -86,7 +86,7 @@ func (p *Postgresql) SearchFeeds() ([]feedme.Feed, error) {
 func (p *Postgresql) SearchItems(feed *feedme.Feed) ([]feedme.Item, error) {
 	items := []feedme.Item{}
 
-	err := p.Db.Select(&items, "SELECT * FROM items WHERE feed = $1 ORDER BY created DESC LIMIT 10", feed.Id)
+	err := p.Db.Select(&items, "SELECT * FROM items WHERE feed = $1 ORDER BY created LIMIT 10", feed.Id)
 	if err != nil && err == sql.ErrNoRows {
 		return nil, nil
 	}
