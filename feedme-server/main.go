@@ -184,6 +184,8 @@ func main() {
 
 	m := martini.Classic()
 
+	m.Use(martini.Static("public"))
+
 	m.Get("/", handleFeeds)
 	m.Get("/:feed/atom", handleItemsAtom)
 	m.Get("/:feed/rss", handleItemsRss)
