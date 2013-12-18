@@ -28,6 +28,7 @@ const (
 )
 
 var opts struct {
+	Logging      bool   `long:"enable-logging" description:"Enable request logging"`
 	MaxIdleConns int    `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
 	MaxOpenConns int    `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
 	Port         uint   `short:"p" long:"port" default:"9090" description:"HTTP port of the server"`
@@ -182,9 +183,18 @@ func main() {
 		panic(err)
 	}
 
-	m := martini.Classic()
+	ma := martini.New()
 
-	m.Use(martini.Static("public"))
+	if opts.Logging {
+		ma.Use(martini.Logger())
+	}
+	ma.Use(martini.Recovery())
+	ma.Use(martini.Static("public"))
+
+	r := martini.NewRouter()
+	ma.Action(r.Handle)
+
+	m := martini.ClassicMartini{ma, r}
 
 	m.Get("/", handleFeeds)
 	m.Get("/:feed/atom", handleItemsAtom)
