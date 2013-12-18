@@ -70,7 +70,7 @@ func main() {
 
 	for _, feed := range feeds {
 		if opts.Verbose {
-			fmt.Printf("Fetch feed%s from %s\n", feed.Name, feed.Url)
+			fmt.Printf("Fetch feed %s from %s\n", feed.Name, feed.Url)
 		}
 
 		var raw map[string]*json.RawMessage
