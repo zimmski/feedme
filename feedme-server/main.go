@@ -189,7 +189,6 @@ func main() {
 		ma.Use(martini.Logger())
 	}
 	ma.Use(martini.Recovery())
-	ma.Use(martini.Static("public"))
 
 	r := martini.NewRouter()
 	ma.Action(r.Handle)
