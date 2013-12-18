@@ -9,7 +9,7 @@ feedme is an infrastructure for creating Atom and RSS feeds from any website. It
 
 ## Set up feedme
 
-*Please note that the following commands use the users's default PostgreSQL user, database and password. If you want to use different login settings you have to specify them using the corresponding psql, feedme-crawler and feedme-server arguments*
+*Please note that the following commands use the users's default PostgreSQL user, database and password. If you want to use different login settings you have to specify them using the corresponding psql, [feedme-crawler](#feedme-crawler) and [feedme-server](#feedme-server) arguments*
 
 Fetch feedme with the go command and install all dependencies.
 
@@ -105,13 +105,14 @@ For example
 	}
 }
 ```
-would access the stored informations of <code>title</code> and <code>image</code> for every feed item.
+would access the stored informations of <code>title</code> and <code>image</code> for each feed item.
 
 ### Selecting nodes
 
 Selecting nodes can be nested through their <code>do</code> element and can contain storing nodes.
 
-*search*
+**search**
+
 Search uses a CSS selector to select many elements.
 
 ```json
@@ -124,7 +125,8 @@ Search uses a CSS selector to select many elements.
 }
 ```
 
-*find*
+**find**
+
 Find uses a CSS selector to select at most one element.
 
 ```json
@@ -137,7 +139,8 @@ Find uses a CSS selector to select at most one element.
 }
 ```
 
-*attr*
+**attr**
+
 Attr selects exactly one attribute of the parents element and can only contain storing nodes in its <code>do</code> element.
 
 ```json
@@ -152,7 +155,8 @@ Attr selects exactly one attribute of the parents element and can only contain s
 
 ### Storing nodes
 
-*regex*
+**regex**
+
 Regex uses its regex string on the parents attribute value to parse it and store matching groups for the feed item transformation. The <code>data</code> element holds an array of name-type pairs for storing item information and must match the count of the matching groups of the regex.
 
 ```json
@@ -260,7 +264,7 @@ Every <code>div.news</code> elements represents a feed item as the selection for
 
 ## feedme-crawler
 
-*CLI arguments*
+**CLI arguments**
 
 ```
       --max-idle-conns= Max idle connections of the database (10)
@@ -275,7 +279,7 @@ The <code>--spec</code> argument uses the connection string parameter of the exc
 
 ## feedme-server
 
-*CLI arguments*
+**CLI arguments**
 
 ```
       --enable-logging  Enable request logging
@@ -289,8 +293,8 @@ The <code>--spec</code> argument uses the connection string parameter of the exc
 
 The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
 
-*Routes*
+**Routes**
 
 * <code>/</code> - Displays all feed definitions via JSON.
-* <code>/<feed name>/atom</code> - Displays an Atom feed for the given feed.
-* <code>/<feed name>/rss</code> - Displays an RSS feed for the given feed.
+* <code>/&lt;feed name&gt;/atom</code> - Displays an Atom feed for the given feed.
+* <code>/&lt;feed name&gt;/rss</code> - Displays an RSS feed for the given feed.
