@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "search": {
+        "selector": "#cartoon",
+        "do": [
+          {
+            "find": {
+              "selector": "a",
+              "do": [
+                {
+                  "attr": {
+                    "selector": "href",
+                    "do": [
+                      {
+                        "regex": "id=(\\d+)",
+                        "data": [
+                          {
+                            "name": "id",
+                            "type": "int"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "find": {
+              "selector": "img",
+              "do": [
+                {
+                  "attr": {
+                    "selector": "src",
+                    "do": [
+                      {
+                        "regex": "^(.+)$",
+                        "data": [
+                          {
+                            "name": "image",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "transform": {
+    "title": "Strip {{.id}}",
+    "uri": "/index.php?pic={{.id}}",
+    "description": "<img src=\"http://www.ruthe.de/{{.image}}\"/> Strip {{.id}}"
+  }
+}

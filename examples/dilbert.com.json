@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "search": {
+        "selector": "div.STR_Image",
+        "do": [
+          {
+            "find": {
+              "selector": "a",
+              "do": [
+                {
+                  "attr": {
+                    "selector": "href",
+                    "do": [
+                      {
+                        "regex": "/strips/comic/(.+)/",
+                        "data": [
+                          {
+                            "name": "date",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "find": {
+              "selector": "img",
+              "do": [
+                {
+                  "attr": {
+                    "selector": "src",
+                    "do": [
+                      {
+                        "regex": "^(.+)$",
+                        "data": [
+                          {
+                            "name": "image",
+                            "type": "string"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "transform": {
+    "title": "Strip {{.date}}",
+    "uri": "/strips/comic/{{.date}}/",
+    "description": "<img src=\"http://dilbert.com{{.image}}\"/> Strip {{.date}}"
+  }
+}
