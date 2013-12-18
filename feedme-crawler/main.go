@@ -76,7 +76,7 @@ func main() {
 		var raw map[string]*json.RawMessage
 		err = json.Unmarshal([]byte(feed.Transform), &raw)
 		if err != nil {
-			fmt.Printf("ERROR cannot parse transform JSON: %s", err.Error())
+			fmt.Printf("ERROR cannot parse transform JSON: %s\n", err.Error())
 
 			continue
 		}
@@ -84,7 +84,7 @@ func main() {
 		var transform map[string]string
 		err = json.Unmarshal(*raw["transform"], &transform)
 		if err != nil {
-			fmt.Printf("ERROR cannot parse transform item: %s", err.Error())
+			fmt.Printf("ERROR cannot parse transform item: %s\n", err.Error())
 
 			continue
 		}
@@ -94,7 +94,7 @@ func main() {
 			transformTemplates[name], err = template.New(name).Parse(tem)
 
 			if err != nil {
-				fmt.Printf("ERROR cannot create transform template: %s", err.Error())
+				fmt.Printf("ERROR cannot create transform template: %s\n", err.Error())
 
 				continue
 			}
@@ -103,14 +103,14 @@ func main() {
 		var jsonItems []map[string]*json.RawMessage
 		err = json.Unmarshal(*raw["items"], &jsonItems)
 		if err != nil {
-			fmt.Printf("ERROR cannot parse items item: %s", err.Error())
+			fmt.Printf("ERROR cannot parse items item: %s\n", err.Error())
 
 			continue
 		}
 
 		doc, err := goquery.NewDocument(feed.Url)
 		if err != nil {
-			fmt.Printf("ERROR cannot open URL: %s", err.Error())
+			fmt.Printf("ERROR cannot open URL: %s\n", err.Error())
 
 			continue
 		}
@@ -123,7 +123,7 @@ func main() {
 			err = magic(doc.Selection, rawTransform, item)
 
 			if err != nil {
-				fmt.Printf("Cannot transform website: %s", err.Error())
+				fmt.Printf("Cannot transform website: %s\n", err.Error())
 
 				goto BADFEED
 			}
@@ -143,7 +143,7 @@ func main() {
 				case "uri":
 					feedItem.Uri = s
 				default:
-					fmt.Printf("unkown field %s", name)
+					fmt.Printf("unkown field %s\n", name)
 
 					goto BADFEED
 				}
@@ -160,7 +160,7 @@ func main() {
 
 		err = db.CreateItems(&feed, items)
 		if err != nil {
-			fmt.Printf("ERROR cannot insert items into database: %s", err.Error())
+			fmt.Printf("ERROR cannot insert items into database: %s\n", err.Error())
 
 			continue
 		}
