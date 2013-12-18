@@ -92,7 +92,6 @@ func main() {
 		transformTemplates := make(map[string]*template.Template)
 		for name, tem := range transform {
 			transformTemplates[name], err = template.New(name).Parse(tem)
-
 			if err != nil {
 				fmt.Printf("ERROR cannot create transform template: %s\n", err.Error())
 
@@ -100,8 +99,7 @@ func main() {
 			}
 		}
 
-		var jsonItems []map[string]*json.RawMessage
-		err = json.Unmarshal(*raw["items"], &jsonItems)
+		jsonItems, err := jsonArray(raw["items"])
 		if err != nil {
 			fmt.Printf("ERROR cannot parse items item: %s\n", err.Error())
 
@@ -121,7 +119,6 @@ func main() {
 			item := make(map[string]interface{})
 
 			err = magic(doc.Selection, rawTransform, item)
-
 			if err != nil {
 				fmt.Printf("Cannot transform website: %s\n", err.Error())
 
@@ -171,106 +168,54 @@ func main() {
 	os.Exit(RET_OK)
 }
 
-func jsonString(raw json.RawMessage) (string, error) {
-	var s string
-
-	err := json.Unmarshal(raw, &s)
-	if err != nil {
-		return "", err
-	}
-
-	return s, nil
-}
-
 func magic(element *goquery.Selection, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
-	var err error
-
 	if raw, ok := rawTransform["search"]; ok {
-		var rawSearch map[string]*json.RawMessage
-		err = json.Unmarshal(*raw, &rawSearch)
+		items, selector, err := jsonNode(raw)
 		if err != nil {
 			return err
 		}
 
-		var searchItems []map[string]*json.RawMessage
-		err = json.Unmarshal(*rawSearch["do"], &searchItems)
-		if err != nil {
-			return err
-		}
-
-		sel, err := jsonString(*rawSearch["selector"])
-		if err != nil {
-			return err
-		}
-
-		element.Find(sel).Each(func(i int, s *goquery.Selection) {
-			for _, searchItem := range searchItems {
-				err = magic(s, searchItem, item)
+		element.Find(selector).Each(func(i int, s *goquery.Selection) {
+			for _, i := range items {
+				err = magic(s, i, item)
 				if err != nil {
 					return
 				}
 			}
 		})
-
 		if err != nil {
 			return err
 		}
 	} else if raw, ok := rawTransform["find"]; ok {
-		var rawFind map[string]*json.RawMessage
-		err = json.Unmarshal(*raw, &rawFind)
+		items, selector, err := jsonNode(raw)
 		if err != nil {
 			return err
 		}
 
-		var findItems []map[string]*json.RawMessage
-		err = json.Unmarshal(*rawFind["do"], &findItems)
-		if err != nil {
-			return err
-		}
-
-		sel, err := jsonString(*rawFind["selector"])
-		if err != nil {
-			return err
-		}
-
-		s := element.Find(sel)
-
+		s := element.Find(selector)
 		if s == nil {
 			return errors.New("no item found")
 		}
 
-		for _, findItem := range findItems {
-			err = magic(s, findItem, item)
+		for _, i := range items {
+			err = magic(s, i, item)
 			if err != nil {
 				return err
 			}
 		}
 	} else if raw, ok := rawTransform["attr"]; ok {
-		var rawAttr map[string]*json.RawMessage
-		err = json.Unmarshal(*raw, &rawAttr)
+		items, selector, err := jsonNode(raw)
 		if err != nil {
 			return err
 		}
 
-		var attrItems []map[string]*json.RawMessage
-		err = json.Unmarshal(*rawAttr["do"], &attrItems)
-		if err != nil {
-			return err
-		}
-
-		sel, err := jsonString(*rawAttr["selector"])
-		if err != nil {
-			return err
-		}
-
-		attr, ok := element.Attr(sel)
-
+		attr, ok := element.Attr(selector)
 		if !ok {
 			return errors.New("no attr found")
 		}
 
-		for _, attrItem := range attrItems {
-			err = magicAttr(attr, attrItem, item)
+		for _, i := range items {
+			err = magicAttr(attr, i, item)
 			if err != nil {
 				return err
 			}
@@ -292,7 +237,7 @@ func magicAttr(attr string, rawTransform map[string]*json.RawMessage, item map[s
 			return err
 		}
 
-		reg, err := jsonString(*raw)
+		reg, err := jsonString(raw)
 		if err != nil {
 			return err
 		}
@@ -300,31 +245,83 @@ func magicAttr(attr string, rawTransform map[string]*json.RawMessage, item map[s
 		re := regexp.MustCompile(reg)
 		var matches = re.FindStringSubmatch(attr)
 
-		if matches != nil {
-			if len(matches)-1 == len(transformMatches) {
-				for i := 0; i < len(transformMatches); i++ {
-					var name = transformMatches[i]["name"]
-
-					switch transformMatches[i]["type"] {
-					case "int":
-						v, _ := strconv.Atoi(matches[i+1])
-
-						item[name] = v
-					case "string":
-						item[name] = matches[i+1]
-					default:
-						return errors.New(fmt.Sprintf("type %s not found", transformMatches[i]["type"]))
-					}
-				}
-			} else {
-				return errors.New("unequal match count")
-			}
-		} else {
+		if matches == nil {
 			return errors.New("no matches found")
+		}
+
+		if len(matches)-1 != len(transformMatches) {
+			return errors.New("unequal match count")
+		}
+
+		for i := 0; i < len(transformMatches); i++ {
+			var name = transformMatches[i]["name"]
+
+			switch transformMatches[i]["type"] {
+			case "int":
+				v, _ := strconv.Atoi(matches[i+1])
+
+				item[name] = v
+			case "string":
+				item[name] = matches[i+1]
+			default:
+				return errors.New(fmt.Sprintf("type %s not found", transformMatches[i]["type"]))
+			}
 		}
 	} else {
 		return errors.New(fmt.Sprintf("do not know how to transform Attrs %+v", rawTransform))
 	}
 
 	return nil
+}
+
+func jsonArray(raw *json.RawMessage) ([]map[string]*json.RawMessage, error) {
+	var array []map[string]*json.RawMessage
+
+	err := json.Unmarshal(*raw, &array)
+	if err != nil {
+		return nil, err
+	}
+
+	return array, nil
+}
+
+func jsonHash(raw *json.RawMessage) (map[string]*json.RawMessage, error) {
+	var hash map[string]*json.RawMessage
+
+	err := json.Unmarshal(*raw, &hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, nil
+}
+
+func jsonString(raw *json.RawMessage) (string, error) {
+	var s string
+
+	err := json.Unmarshal(*raw, &s)
+	if err != nil {
+		return "", err
+	}
+
+	return s, nil
+}
+
+func jsonNode(raw *json.RawMessage) ([]map[string]*json.RawMessage, string, error) {
+	node, err := jsonHash(raw)
+	if err != nil {
+		return nil, "", err
+	}
+
+	items, err := jsonArray(node["do"])
+	if err != nil {
+		return nil, "", err
+	}
+
+	selector, err := jsonString(node["selector"])
+	if err != nil {
+		return nil, "", err
+	}
+
+	return items, selector, nil
 }
