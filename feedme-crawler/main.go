@@ -118,7 +118,7 @@ func main() {
 		for _, rawTransform := range jsonItems {
 			item := make(map[string]interface{})
 
-			err = magic(doc.Selection, rawTransform, item)
+			err = crawlNode(doc.Selection, rawTransform, item)
 			if err != nil {
 				fmt.Printf("Cannot transform website: %s\n", err.Error())
 
@@ -168,7 +168,7 @@ func main() {
 	os.Exit(RET_OK)
 }
 
-func magic(element *goquery.Selection, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
+func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
 	if raw, ok := rawTransform["search"]; ok {
 		items, selector, err := jsonNode(raw)
 		if err != nil {
@@ -177,7 +177,7 @@ func magic(element *goquery.Selection, rawTransform map[string]*json.RawMessage,
 
 		element.Find(selector).Each(func(i int, s *goquery.Selection) {
 			for _, i := range items {
-				err = magic(s, i, item)
+				err = crawlNode(s, i, item)
 				if err != nil {
 					return
 				}
@@ -198,7 +198,7 @@ func magic(element *goquery.Selection, rawTransform map[string]*json.RawMessage,
 		}
 
 		for _, i := range items {
-			err = magic(s, i, item)
+			err = crawlNode(s, i, item)
 			if err != nil {
 				return err
 			}
@@ -215,7 +215,7 @@ func magic(element *goquery.Selection, rawTransform map[string]*json.RawMessage,
 		}
 
 		for _, i := range items {
-			err = magicAttr(attr, i, item)
+			err = crawlAttr(attr, i, item)
 			if err != nil {
 				return err
 			}
@@ -227,7 +227,7 @@ func magic(element *goquery.Selection, rawTransform map[string]*json.RawMessage,
 	return nil
 }
 
-func magicAttr(attr string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
+func crawlAttr(attr string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
 	var err error
 
 	if raw, ok := rawTransform["regex"]; ok {
