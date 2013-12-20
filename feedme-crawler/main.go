@@ -29,6 +29,14 @@ var opts struct {
 	Verbose      bool   `short:"v" long:"verbose" description:"Print what is going on"`
 }
 
+func E(format string, a ...interface{}) (n int, err error) {
+	return fmt.Printf("ERROR "+format, a...)
+}
+
+func V(format string, a ...interface{}) (n int, err error) {
+	return fmt.Printf("VERBOSE "+format, a...)
+}
+
 func main() {
 	var err error
 
@@ -70,13 +78,13 @@ func main() {
 
 	for _, feed := range feeds {
 		if opts.Verbose {
-			fmt.Printf("Fetch feed %s from %s\n", feed.Name, feed.Url)
+			V("Fetch feed %s from %s\n", feed.Name, feed.Url)
 		}
 
 		var raw map[string]*json.RawMessage
 		err = json.Unmarshal([]byte(feed.Transform), &raw)
 		if err != nil {
-			fmt.Printf("ERROR cannot parse transform JSON: %s\n", err.Error())
+			E("Cannot parse transform JSON: %s\n", err.Error())
 
 			continue
 		}
@@ -84,7 +92,7 @@ func main() {
 		var transform map[string]string
 		err = json.Unmarshal(*raw["transform"], &transform)
 		if err != nil {
-			fmt.Printf("ERROR cannot parse transform item: %s\n", err.Error())
+			E("Cannot parse transform item: %s\n", err.Error())
 
 			continue
 		}
@@ -93,7 +101,7 @@ func main() {
 		for name, tem := range transform {
 			transformTemplates[name], err = template.New(name).Parse(tem)
 			if err != nil {
-				fmt.Printf("ERROR cannot create transform template: %s\n", err.Error())
+				E("Cannot create transform template: %s\n", err.Error())
 
 				continue
 			}
@@ -101,14 +109,14 @@ func main() {
 
 		jsonItems, err := jsonArray(raw["items"])
 		if err != nil {
-			fmt.Printf("ERROR cannot parse items item: %s\n", err.Error())
+			E("Cannot parse items item: %s\n", err.Error())
 
 			continue
 		}
 
 		doc, err := goquery.NewDocument(feed.Url)
 		if err != nil {
-			fmt.Printf("ERROR cannot open URL: %s\n", err.Error())
+			E("Cannot open URL: %s\n", err.Error())
 
 			continue
 		}
@@ -120,7 +128,7 @@ func main() {
 
 			err = crawlNode(doc.Selection, rawTransform, item)
 			if err != nil {
-				fmt.Printf("Cannot transform website: %s\n", err.Error())
+				E("Cannot transform website: %s\n", err.Error())
 
 				goto BADFEED
 			}
@@ -140,7 +148,7 @@ func main() {
 				case "uri":
 					feedItem.Uri = s
 				default:
-					fmt.Printf("unkown field %s\n", name)
+					E("Unkown field %s\n", name)
 
 					goto BADFEED
 				}
@@ -148,7 +156,7 @@ func main() {
 
 			if feedItem.Title != "" && feedItem.Uri != "" {
 				if opts.Verbose {
-					fmt.Printf("\tFound item %+v\n", feedItem)
+					V("Found item %+v\n", feedItem)
 				}
 
 				items = append(items, feedItem)
@@ -157,7 +165,7 @@ func main() {
 
 		err = db.CreateItems(&feed, items)
 		if err != nil {
-			fmt.Printf("ERROR cannot insert items into database: %s\n", err.Error())
+			E("Cannot insert items into database: %s\n", err.Error())
 
 			continue
 		}
@@ -194,7 +202,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 
 		s := element.Find(selector)
 		if s == nil {
-			return errors.New("no item found")
+			return errors.New("No item found")
 		}
 
 		for _, i := range items {
@@ -211,7 +219,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 
 		attr, ok := element.Attr(selector)
 		if !ok {
-			return errors.New("no attr found")
+			return errors.New("No attr found")
 		}
 
 		for _, i := range items {
@@ -221,7 +229,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 			}
 		}
 	} else {
-		return errors.New(fmt.Sprintf("do not know how to transform Node %+v", rawTransform))
+		return errors.New(fmt.Sprintf("Do not know how to transform Node %+v", rawTransform))
 	}
 
 	return nil
@@ -246,11 +254,11 @@ func crawlAttr(attr string, rawTransform map[string]*json.RawMessage, item map[s
 		var matches = re.FindStringSubmatch(attr)
 
 		if matches == nil {
-			return errors.New("no matches found")
+			return errors.New("No matches found")
 		}
 
 		if len(matches)-1 != len(transformMatches) {
-			return errors.New("unequal match count")
+			return errors.New("Unequal match count")
 		}
 
 		for i := 0; i < len(transformMatches); i++ {
@@ -264,11 +272,11 @@ func crawlAttr(attr string, rawTransform map[string]*json.RawMessage, item map[s
 			case "string":
 				item[name] = matches[i+1]
 			default:
-				return errors.New(fmt.Sprintf("type %s not found", transformMatches[i]["type"]))
+				return errors.New(fmt.Sprintf("Type %s not found", transformMatches[i]["type"]))
 			}
 		}
 	} else {
-		return errors.New(fmt.Sprintf("do not know how to transform Attrs %+v", rawTransform))
+		return errors.New(fmt.Sprintf("Do not know how to transform Attrs %+v", rawTransform))
 	}
 
 	return nil
