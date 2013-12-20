@@ -155,6 +155,17 @@ Attr selects exactly one attribute of the parents element and can only contain s
 
 ### Storing nodes
 
+**copy**
+Copy copies the attribute value direclty for the feed item transformation.
+
+```json
+{
+	"copy": true,
+	"name": "storing name",
+	"type": "int or string, which is the type of the value"
+}
+```
+
 **regex**
 
 Regex uses its regex string on the parents attribute value to parse it and store matching groups for the feed item transformation. The <code>data</code> element holds an array of name-type pairs for storing item information and must match the count of the matching groups of the regex.
@@ -165,7 +176,7 @@ Regex uses its regex string on the parents attribute value to parse it and store
 	"data": [
 		{
 			"name": "storing name of first match",
-			"type": "int or string, which is the type"
+			"type": "int or string, which is the type of the value"
 		}
 	]
 }

@@ -263,8 +263,9 @@ func crawlAttrValue(attrValue string, rawTransform map[string]*json.RawMessage, 
 
 		for i := 0; i < len(transformMatches); i++ {
 			var name = transformMatches[i]["name"]
+			var typ = transformMatches[i]["type"]
 
-			switch transformMatches[i]["type"] {
+			switch typ {
 			case "int":
 				v, _ := strconv.Atoi(matches[i+1])
 
@@ -272,8 +273,29 @@ func crawlAttrValue(attrValue string, rawTransform map[string]*json.RawMessage, 
 			case "string":
 				item[name] = matches[i+1]
 			default:
-				return errors.New(fmt.Sprintf("Type %s not found", transformMatches[i]["type"]))
+				return errors.New(fmt.Sprintf("Unknown type %s", typ))
 			}
+		}
+	} else if _, ok := rawTransform["copy"]; ok {
+		name, err := jsonString(rawTransform["name"])
+		if err != nil {
+			return err
+		}
+
+		typ, err := jsonString(rawTransform["type"])
+		if err != nil {
+			return err
+		}
+
+		switch typ {
+		case "int":
+			v, _ := strconv.Atoi(attrValue)
+
+			item[name] = v
+		case "string":
+			item[name] = attrValue
+		default:
+			return errors.New(fmt.Sprintf("Unknown type %s", typ))
 		}
 	} else {
 		return errors.New(fmt.Sprintf("Do not know how to transform Attrs %+v", rawTransform))
