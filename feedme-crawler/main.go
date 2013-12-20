@@ -217,13 +217,13 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 			return err
 		}
 
-		attr, ok := element.Attr(selector)
+		attrValue, ok := element.Attr(selector)
 		if !ok {
 			return errors.New("No attr found")
 		}
 
 		for _, i := range items {
-			err = crawlAttr(attr, i, item)
+			err = crawlAttrValue(attrValue, i, item)
 			if err != nil {
 				return err
 			}
@@ -235,7 +235,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 	return nil
 }
 
-func crawlAttr(attr string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
+func crawlAttrValue(attrValue string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
 	var err error
 
 	if raw, ok := rawTransform["regex"]; ok {
@@ -251,7 +251,7 @@ func crawlAttr(attr string, rawTransform map[string]*json.RawMessage, item map[s
 		}
 
 		re := regexp.MustCompile(reg)
-		var matches = re.FindStringSubmatch(attr)
+		var matches = re.FindStringSubmatch(attrValue)
 
 		if matches == nil {
 			return errors.New("No matches found")
