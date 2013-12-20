@@ -65,7 +65,7 @@ func (p *Postgresql) FindFeed(feedName string) (*feedme.Feed, error) {
 	feed := &feedme.Feed{}
 
 	err := p.Db.Get(feed, "SELECT * FROM feeds WHERE name = $1", feedName)
-	if err != nil && err == sql.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 
@@ -76,7 +76,7 @@ func (p *Postgresql) SearchFeeds() ([]feedme.Feed, error) {
 	feeds := []feedme.Feed{}
 
 	err := p.Db.Select(&feeds, "SELECT * FROM feeds ORDER BY name")
-	if err != nil && err == sql.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 
@@ -87,7 +87,7 @@ func (p *Postgresql) SearchItems(feed *feedme.Feed) ([]feedme.Item, error) {
 	items := []feedme.Item{}
 
 	err := p.Db.Select(&items, "SELECT * FROM items WHERE feed = $1 ORDER BY created LIMIT 10", feed.Id)
-	if err != nil && err == sql.ErrNoRows {
+	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 
