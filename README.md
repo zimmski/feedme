@@ -57,7 +57,7 @@ For example [/examples/dilbert.com.json](/examples/dilbert.com.json) holds the t
 You can add the dilbert.com feed to your database by issuing the following SQL statement.
 
 ```SQL
-INSERT INTO feeds(name, url, transform) VALUES ('dilbert.com', 'http://dilbert.com/', '{"items": [{"search": "div.STR_Image","do": [{"find": "a","do": [{"attr": "href","do": [{"regex": "/strips/comic/(.+)/","data": [{"name": "date","type": "string"}]}]}]},{"find": "img","do": [{"attr": "src","do": [{"copy": true,"name": "image","type": "string"}]}]}]}],"transform": {"title": "Strip {{.date}}","uri": "/strips/comic/{{.date}}/","description": "<img src=\"http://dilbert.com{{.image}}\"/> Strip {{.date}}"}}');
+INSERT INTO feeds(name, url, transform) VALUES ('dilbert.com', 'http://dilbert.com/', '{"items": [{"search": "div.STR_Image","do": [{"find": "a","do": [{"attr": "href","do": [{"regex": "/strips/comic/(.+)/","matches": [{"name": "date","type": "string"}]}]}]},{"find": "img","do": [{"attr": "src","do": [{"copy": true,"name": "image","type": "string"}]}]}]}],"transform": {"title": "Strip {{.date}}","uri": "/strips/comic/{{.date}}/","description": "<img src=\"http://dilbert.com{{.image}}\"/> Strip {{.date}}"}}');
 ```
 
 The <code>name</code> column of the <code>feeds</code> table must be unique and states the identifying name of the feed for the feed URL of the web service. The <code>url</code> column defines which page should be fetched and transformed for the feed generation. The <code>transform</code> column holds the transform definition.
@@ -175,12 +175,12 @@ Copy copies the attribute value direclty for the feed item transformation.
 
 **regex**
 
-Regex uses its regex string on the parents attribute value to parse it and store matching groups for the feed item transformation. The <code>data</code> element holds an array of name-type pairs for storing item information and must match the count of the matching groups of the regex.
+Regex uses its regex string on the parents attribute value to parse it and store matching groups for the feed item transformation. The <code>matches</code> element holds an array of name-type pairs for storing item information and must match the count of the matching groups of the regex.
 
 ```json
 {
 	"regex": "regex with capturing groups",
-	"data": [
+	"matches": [
 		{
 			"name": "storing name of first match",
 			"type": "int or string, which is the type of the value"
@@ -194,7 +194,7 @@ For example
 ```json
 {
 	"regex": "id=(\\d+)&image=(.+)",
-	"data": [
+	"matches": [
 		{
 			"name": "id",
 			"type": "int"
@@ -225,7 +225,7 @@ would parse the value of the given attribute and store the parsed values into <c
 							"do": [
 								{
 									"regex": "id=(\\d+)",
-									"data": [
+									"matches": [
 										{
 											"name": "id",
 											"type": "int"
@@ -244,7 +244,7 @@ would parse the value of the given attribute and store the parsed values into <c
 							"do": [
 								{
 									"regex": "^(.+)$",
-									"data": [
+									"matches": [
 										{
 											"name": "image",
 											"type": "string"

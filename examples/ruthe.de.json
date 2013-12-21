@@ -11,7 +11,7 @@
               "do": [
                 {
                   "regex": "id=(\\d+)",
-                  "data": [
+                  "matches": [
                     {
                       "name": "id",
                       "type": "int"

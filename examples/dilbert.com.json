@@ -11,7 +11,7 @@
               "do": [
                 {
                   "regex": "/strips/comic/(.+)/",
-                  "data": [
+                  "matches": [
                     {
                       "name": "date",
                       "type": "string"

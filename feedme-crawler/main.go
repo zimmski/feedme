@@ -284,7 +284,7 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 
 	if rawRegex, ok := rawTransform["regex"]; ok {
 		var transformMatches []map[string]string
-		err = json.Unmarshal(*rawTransform["data"], &transformMatches)
+		err = json.Unmarshal(*rawTransform["matches"], &transformMatches)
 		if err != nil {
 			return err
 		}
