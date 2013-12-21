@@ -1,53 +1,43 @@
 {
   "items": [
     {
-      "search": {
-        "selector": "#cartoon",
-        "do": [
-          {
-            "find": {
-              "selector": "a",
+      "search": "#cartoon",
+      "do": [
+        {
+          "find": "a",
+          "do": [
+            {
+              "attr": "href",
               "do": [
                 {
-                  "attr": {
-                    "selector": "href",
-                    "do": [
-                      {
-                        "regex": "id=(\\d+)",
-                        "data": [
-                          {
-                            "name": "id",
-                            "type": "int"
-                          }
-                        ]
-                      }
-                    ]
-                  }
+                  "regex": "id=(\\d+)",
+                  "data": [
+                    {
+                      "name": "id",
+                      "type": "int"
+                    }
+                  ]
                 }
               ]
             }
-          },
-          {
-            "find": {
-              "selector": "img",
+          ]
+        },
+        {
+          "find": "img",
+          "do": [
+            {
+              "attr": "src",
               "do": [
                 {
-                  "attr": {
-                    "selector": "src",
-                    "do": [
-                      {
-                        "copy": true,
-                        "name": "image",
-                        "type": "string"
-                      }
-                    ]
-                  }
+                  "copy": true,
+                  "name": "image",
+                  "type": "string"
                 }
               ]
             }
-          }
-        ]
-      }
+          ]
+        }
+      ]
     }
   ],
   "transform": {

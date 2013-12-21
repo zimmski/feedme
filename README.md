@@ -57,7 +57,7 @@ For example [/examples/dilbert.com.json](/examples/dilbert.com.json) holds the t
 You can add the dilbert.com feed to your database by issuing the following SQL statement.
 
 ```SQL
-INSERT INTO feeds(name, url, transform) VALUES ('dilbert.com', 'http://dilbert.com/', '{"items": [{"search": {"selector": "div.STR_Image","do": [{"find": {"selector": "a","do": [{"attr": {"selector": "href","do": [{"regex": "/strips/comic/(.+)/","data": [{"name": "date","type": "string"}]}]}}]}},{"find": {"selector": "img","do": [{"attr": {"selector": "src","do": [{"regex": "^(.+)$","data": [{"name": "image","type": "string"}]}]}}]}}]}}],"transform": {"title": "Strip {{.date}}","uri": "/strips/comic/{{.date}}/","description": "<img src=\"http://dilbert.com{{.image}}\"/> Strip {{.date}}"}}');
+INSERT INTO feeds(name, url, transform) VALUES ('dilbert.com', 'http://dilbert.com/', '{"items": [{"search": "div.STR_Image","do": [{"find": "a","do": [{"attr": "href","do": [{"regex": "/strips/comic/(.+)/","data": [{"name": "date","type": "string"}]}]}]},{"find": "img","do": [{"attr": "src","do": [{"copy": true,"name": "image","type": "string"}]}]}]}],"transform": {"title": "Strip {{.date}}","uri": "/strips/comic/{{.date}}/","description": "<img src=\"http://dilbert.com{{.image}}\"/> Strip {{.date}}"}}');
 ```
 
 The <code>name</code> column of the <code>feeds</code> table must be unique and states the identifying name of the feed for the feed URL of the web service. The <code>url</code> column defines which page should be fetched and transformed for the feed generation. The <code>transform</code> column holds the transform definition.
@@ -117,11 +117,9 @@ Search uses a CSS selector to select many elements.
 
 ```json
 {
-	"search": {
-		"selector": "CSS selector",
-		"do": [
-		]
-	}
+	"search": "CSS selector",
+	"do": [
+	]
 }
 ```
 
@@ -131,11 +129,9 @@ Find uses a CSS selector to select at most one element.
 
 ```json
 {
-	"find": {
-		"selector": "CSS selector",
-		"do": [
-		]
-	}
+	"find": "CSS selector",
+	"do": [
+	]
 }
 ```
 
@@ -145,11 +141,9 @@ Attr selects exactly one attribute of the parents element and can only contain s
 
 ```json
 {
-	"search": {
-		"selector": "attribute name",
-		"do": [
-		]
-	}
+	"search": "attribute name",
+	"do": [
+	]
 }
 ```
 
@@ -159,10 +153,9 @@ Text extracts the combined text contents of the current node and its children.
 
 ```json
 {
-	"text": {
-		"do": [
-		]
-	}
+	"text": true,
+	"do": [
+	]
 }
 ```
 
@@ -222,57 +215,47 @@ would parse the value of the given attribute and store the parsed values into <c
 {
 	"items": [
 		{
-			"search": {
-				"selector": "div.news",
-				"do": [
-					{
-						"find": {
-							"selector": "a",
+			"search": "div.news",
+			"do": [
+				{
+					"find": "a",
+					"do": [
+						{
+							"attr": "href",
 							"do": [
 								{
-									"attr": {
-										"selector": "href",
-										"do": [
-											{
-												"regex": "id=(\\d+)",
-												"data": [
-													{
-														"name": "id",
-														"type": "int"
-													}
-												]
-											}
-										]
-									}
+									"regex": "id=(\\d+)",
+									"data": [
+										{
+											"name": "id",
+											"type": "int"
+										}
+									]
 								}
 							]
 						}
-					},
-					{
-						"find": {
-							"selector": "img",
+					]
+				},
+				{
+					"find": "img",
+					"do": [
+						{
+							"attr": "src",
 							"do": [
 								{
-									"attr": {
-										"selector": "src",
-										"do": [
-											{
-												"regex": "^(.+)$",
-												"data": [
-													{
-														"name": "image",
-														"type": "string"
-													}
-												]
-											}
-										]
-									}
+									"regex": "^(.+)$",
+									"data": [
+										{
+											"name": "image",
+											"type": "string"
+										}
+									]
 								}
 							]
 						}
-					}
-				]
-			}
+					]
+				}
+			]
 		}
 	],
 	"transform": {

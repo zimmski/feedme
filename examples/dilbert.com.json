@@ -1,53 +1,43 @@
 {
   "items": [
     {
-      "search": {
-        "selector": "div.STR_Image",
-        "do": [
-          {
-            "find": {
-              "selector": "a",
+      "search": "div.STR_Image",
+      "do": [
+        {
+          "find": "a",
+          "do": [
+            {
+              "attr": "href",
               "do": [
                 {
-                  "attr": {
-                    "selector": "href",
-                    "do": [
-                      {
-                        "regex": "/strips/comic/(.+)/",
-                        "data": [
-                          {
-                            "name": "date",
-                            "type": "string"
-                          }
-                        ]
-                      }
-                    ]
-                  }
+                  "regex": "/strips/comic/(.+)/",
+                  "data": [
+                    {
+                      "name": "date",
+                      "type": "string"
+                    }
+                  ]
                 }
               ]
             }
-          },
-          {
-            "find": {
-              "selector": "img",
+          ]
+        },
+        {
+          "find": "img",
+          "do": [
+            {
+              "attr": "src",
               "do": [
                 {
-                  "attr": {
-                    "selector": "src",
-                    "do": [
-                      {
-                        "copy": true,
-                        "name": "image",
-                        "type": "string"
-                      }
-                    ]
-                  }
+                  "copy": true,
+                  "name": "image",
+                  "type": "string"
                 }
               ]
             }
-          }
-        ]
-      }
+          ]
+        }
+      ]
     }
   ],
   "transform": {

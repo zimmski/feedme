@@ -1,41 +1,34 @@
 {
   "items": [
     {
-      "search": {
-        "selector": "#archiv_woche ul li",
-        "do": [
-          {
-            "find": {
-              "selector": "a",
+      "search": "#archiv_woche ul li",
+      "do": [
+        {
+          "find": "a",
+          "do": [
+            {
+              "text": true,
               "do": [
                 {
-                  "text": {
-                    "do": [
-                      {
-                        "copy": true,
-                        "name": "title",
-                        "type": "string"
-                      }
-                    ]
-                  }
-                },
+                  "copy": true,
+                  "name": "title",
+                  "type": "string"
+                }
+              ]
+            },
+            {
+              "attr": "href",
+              "do": [
                 {
-                  "attr": {
-                    "selector": "href",
-                    "do": [
-                      {
-                        "copy": true,
-                        "name": "uri",
-                        "type": "string"
-                      }
-                    ]
-                  }
+                  "copy": true,
+                  "name": "uri",
+                  "type": "string"
                 }
               ]
             }
-          }
-        ]
-      }
+          ]
+        }
+      ]
     }
   ],
   "transform": {

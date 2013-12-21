@@ -187,8 +187,8 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 		itemValues[0] = make(map[string]interface{})
 	}
 
-	if raw, ok := rawTransform["search"]; ok {
-		do, selector, err := jsonNode(raw)
+	if rawSelector, ok := rawTransform["search"]; ok {
+		selector, do, err := jsonNode(rawTransform, rawSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -204,15 +204,14 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 			}
 
 			if baseSelection && i != nodes.Length()-1 {
-				fmt.Printf("new item value\n")
 				itemValues = append(itemValues, make(map[string]interface{}))
 			}
 		})
 		if err != nil {
 			return nil, err
 		}
-	} else if raw, ok := rawTransform["find"]; ok {
-		do, selector, err := jsonNode(raw)
+	} else if rawSelector, ok := rawTransform["find"]; ok {
+		selector, do, err := jsonNode(rawTransform, rawSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -228,8 +227,8 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 				return nil, err
 			}
 		}
-	} else if raw, ok := rawTransform["attr"]; ok {
-		do, selector, err := jsonNode(raw)
+	} else if rawSelector, ok := rawTransform["attr"]; ok {
+		selector, do, err := jsonNode(rawTransform, rawSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -245,8 +244,8 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 				return nil, err
 			}
 		}
-	} else if raw, ok := rawTransform["text"]; ok {
-		do, _, err := jsonNode(raw)
+	} else if _, ok := rawTransform["text"]; ok {
+		_, do, err := jsonNode(rawTransform, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -269,14 +268,14 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, itemValue map[string]interface{}) error {
 	var err error
 
-	if raw, ok := rawTransform["regex"]; ok {
+	if rawRegex, ok := rawTransform["regex"]; ok {
 		var transformMatches []map[string]string
 		err = json.Unmarshal(*rawTransform["data"], &transformMatches)
 		if err != nil {
 			return err
 		}
 
-		reg, err := jsonString(raw)
+		reg, err := jsonString(rawRegex)
 		if err != nil {
 			return err
 		}
@@ -372,21 +371,16 @@ func jsonString(raw *json.RawMessage) (string, error) {
 	return s, nil
 }
 
-func jsonNode(raw *json.RawMessage) ([]map[string]*json.RawMessage, string, error) {
-	node, err := jsonHash(raw)
+func jsonNode(rawTransform map[string]*json.RawMessage, rawSelector *json.RawMessage) (string, []map[string]*json.RawMessage, error) {
+	selector, err := jsonString(rawSelector)
 	if err != nil {
-		return nil, "", err
+		return "", nil, err
 	}
 
-	do, err := jsonArray(node["do"])
+	do, err := jsonArray(rawTransform["do"])
 	if err != nil {
-		return nil, "", err
+		return "", nil, err
 	}
 
-	selector, err := jsonString(node["selector"])
-	if err != nil {
-		return nil, "", err
-	}
-
-	return do, selector, nil
+	return selector, do, nil
 }
