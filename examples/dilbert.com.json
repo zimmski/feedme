@@ -36,13 +36,9 @@
                     "selector": "src",
                     "do": [
                       {
-                        "regex": "^(.+)$",
-                        "data": [
-                          {
-                            "name": "image",
-                            "type": "string"
-                          }
-                        ]
+                        "copy": true,
+                        "name": "image",
+                        "type": "string"
                       }
                     ]
                   }
