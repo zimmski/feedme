@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime"
 	"strconv"
 	"text/template"
 
@@ -22,19 +23,13 @@ const (
 	RET_HELP
 )
 
+var db backend.Backend
 var opts struct {
 	MaxIdleConns int    `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
 	MaxOpenConns int    `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
 	Spec         string `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+	Workers      int    `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
 	Verbose      bool   `short:"v" long:"verbose" description:"Print what is going on"`
-}
-
-func E(format string, a ...interface{}) (n int, err error) {
-	return fmt.Printf("ERROR "+format, a...)
-}
-
-func V(format string, a ...interface{}) (n int, err error) {
-	return fmt.Printf("VERBOSE "+format, a...)
 }
 
 func main() {
@@ -55,18 +50,18 @@ func main() {
 		}
 	}
 
-	db, err := backend.NewBackend("postgresql")
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	db, err = backend.NewBackend("postgresql")
 	if err != nil {
 		panic(err)
 	}
 
-	params := backend.BackendParameters{
+	err = db.Init(backend.BackendParameters{
 		Spec:         opts.Spec,
 		MaxIdleConns: opts.MaxIdleConns,
 		MaxOpenConns: opts.MaxOpenConns,
-	}
-
-	err = db.Init(params)
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -76,104 +71,123 @@ func main() {
 		panic(err)
 	}
 
-	for _, feed := range feeds {
-		if opts.Verbose {
-			V("Fetch feed %s from %s\n", feed.Name, feed.Url)
-		}
+	feedQueue := make(chan feedme.Feed)
+	consumeFeeds := make(chan bool, len(feeds))
 
-		var raw map[string]*json.RawMessage
-		err = json.Unmarshal([]byte(feed.Transform), &raw)
-		if err != nil {
-			E("Cannot parse transform JSON: %s\n", err.Error())
+	for i := 0; i < opts.Workers; i++ {
+		go func(id int, feedQueue <-chan feedme.Feed, consumeFeeds chan<- bool) {
+			for {
+				select {
+				case feed, ok := <-feedQueue:
+					if ok {
+						err := processFeed(id, &feed)
+						if err != nil {
+							EW(id, err.Error())
+						}
 
-			continue
-		}
-
-		var transform map[string]string
-		err = json.Unmarshal(*raw["transform"], &transform)
-		if err != nil {
-			E("Cannot parse transform item: %s\n", err.Error())
-
-			continue
-		}
-
-		transformTemplates := make(map[string]*template.Template)
-		for name, tem := range transform {
-			transformTemplates[name], err = template.New(name).Parse(tem)
-			if err != nil {
-				E("Cannot create transform template: %s\n", err.Error())
-
-				continue
-			}
-		}
-
-		jsonItems, err := jsonArray(raw["items"])
-		if err != nil {
-			E("Cannot parse items item: %s\n", err.Error())
-
-			continue
-		}
-
-		doc, err := goquery.NewDocument(feed.Url)
-		if err != nil {
-			E("Cannot open URL: %s\n", err.Error())
-
-			continue
-		}
-
-		var items []feedme.Item
-
-		for _, rawTransform := range jsonItems {
-			itemValues, err := crawlNode(doc.Selection, rawTransform, nil)
-			if err != nil {
-				E("Cannot transform website: %s\n", err.Error())
-
-				goto BADFEED
-			}
-
-			for _, itemValue := range itemValues {
-				feedItem := feedme.Item{}
-
-				for name, t := range transformTemplates {
-					var out bytes.Buffer
-					t.Execute(&out, itemValue)
-					s := out.String()
-
-					switch name {
-					case "description":
-						feedItem.Description = s
-					case "title":
-						feedItem.Title = s
-					case "uri":
-						feedItem.Uri = s
-					default:
-						E("Unkown field %s\n", name)
-
-						goto BADFEED
+						consumeFeeds <- true
+					} else {
+						return
 					}
 				}
-
-				if feedItem.Title != "" && feedItem.Uri != "" {
-					if opts.Verbose {
-						V("Found item %+v\n", feedItem)
-					}
-
-					items = append(items, feedItem)
-				}
 			}
-		}
-
-		err = db.CreateItems(&feed, items)
-		if err != nil {
-			E("Cannot insert items into database: %s\n", err.Error())
-
-			continue
-		}
-
-	BADFEED:
+		}(i, feedQueue, consumeFeeds)
 	}
 
+	for _, feed := range feeds {
+		feedQueue <- feed
+	}
+
+	for i := 0; i < len(feeds); i++ {
+		<-consumeFeeds
+	}
+
+	close(feedQueue)
+
 	os.Exit(RET_OK)
+}
+
+func processFeed(workerId int, feed *feedme.Feed) error {
+	var err error
+
+	if opts.Verbose {
+		VW(workerId, "Fetch feed %s from %s", feed.Name, feed.Url)
+	}
+
+	var raw map[string]*json.RawMessage
+	err = json.Unmarshal([]byte(feed.Transform), &raw)
+	if err != nil {
+		return newError("Cannot parse transform JSON: %s", err.Error())
+	}
+
+	var transform map[string]string
+	err = json.Unmarshal(*raw["transform"], &transform)
+	if err != nil {
+		return newError("Cannot parse transform item: %s", err.Error())
+	}
+
+	transformTemplates := make(map[string]*template.Template)
+	for name, tem := range transform {
+		transformTemplates[name], err = template.New(name).Parse(tem)
+		if err != nil {
+			return newError("Cannot create transform template: %s", err.Error())
+		}
+	}
+
+	jsonItems, err := jsonArray(raw["items"])
+	if err != nil {
+		return newError("Cannot parse items item: %s", err.Error())
+	}
+
+	doc, err := goquery.NewDocument(feed.Url)
+	if err != nil {
+		return newError("Cannot open URL: %s", err.Error())
+	}
+
+	var items []feedme.Item
+
+	for _, rawTransform := range jsonItems {
+		itemValues, err := crawlNode(doc.Selection, rawTransform, nil)
+		if err != nil {
+			return newError("Cannot transform website: %s", err.Error())
+		}
+
+		for _, itemValue := range itemValues {
+			feedItem := feedme.Item{}
+
+			for name, t := range transformTemplates {
+				var out bytes.Buffer
+				t.Execute(&out, itemValue)
+				s := out.String()
+
+				switch name {
+				case "description":
+					feedItem.Description = s
+				case "title":
+					feedItem.Title = s
+				case "uri":
+					feedItem.Uri = s
+				default:
+					return newError("Unkown field %s", name)
+				}
+			}
+
+			if feedItem.Title != "" && feedItem.Uri != "" {
+				if opts.Verbose {
+					VW(workerId, "Found item %+v", feedItem)
+				}
+
+				items = append(items, feedItem)
+			}
+		}
+	}
+
+	err = db.CreateItems(feed, items)
+	if err != nil {
+		return newError("Cannot insert items into database: %s", err.Error())
+	}
+
+	return nil
 }
 
 func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMessage, itemValues []map[string]interface{}) ([]map[string]interface{}, error) {
@@ -218,7 +232,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 
 		s := element.Find(selector)
 		if s == nil {
-			return nil, errors.New("No item found")
+			return nil, newError("No item found")
 		}
 
 		for _, d := range do {
@@ -235,7 +249,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 
 		attrValue, ok := element.Attr(selector)
 		if !ok {
-			return nil, errors.New("No attr found")
+			return nil, newError("No attr found")
 		}
 
 		for _, d := range do {
@@ -259,7 +273,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 			}
 		}
 	} else {
-		return nil, errors.New(fmt.Sprintf("Do not know how to transform Node %+v", rawTransform))
+		return nil, newError("Do not know how to transform Node %+v", rawTransform)
 	}
 
 	return itemValues, nil
@@ -284,11 +298,11 @@ func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item
 		var matches = re.FindStringSubmatch(value)
 
 		if matches == nil {
-			return errors.New("No matches found")
+			return newError("No matches found")
 		}
 
 		if len(matches)-1 != len(transformMatches) {
-			return errors.New("Unequal match count")
+			return newError("Unequal match count")
 		}
 
 		for i := 0; i < len(transformMatches); i++ {
@@ -303,7 +317,7 @@ func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item
 			case "string":
 				itemValue[name] = matches[i+1]
 			default:
-				return errors.New(fmt.Sprintf("Unknown type %s", typ))
+				return newError("Unknown type %s", typ)
 			}
 		}
 	} else if _, ok := rawTransform["copy"]; ok {
@@ -325,10 +339,10 @@ func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item
 		case "string":
 			itemValue[name] = value
 		default:
-			return errors.New(fmt.Sprintf("Unknown type %s", typ))
+			return newError("Unknown type %s", typ)
 		}
 	} else {
-		return errors.New(fmt.Sprintf("Do not know how to transform Attrs %+v", rawTransform))
+		return newError("Do not know how to transform Attrs %+v", rawTransform)
 	}
 
 	return nil
@@ -383,4 +397,24 @@ func jsonNode(rawTransform map[string]*json.RawMessage, rawSelector *json.RawMes
 	}
 
 	return selector, do, nil
+}
+
+func newError(format string, a ...interface{}) error {
+	return errors.New(fmt.Sprintf(format, a...))
+}
+
+func E(format string, a ...interface{}) (n int, err error) {
+	return fmt.Printf("ERROR "+format+"\n", a...)
+}
+
+func EW(workerId int, format string, a ...interface{}) (n int, err error) {
+	return E(fmt.Sprintf("[%d] ", workerId)+format, a...)
+}
+
+func V(format string, a ...interface{}) (n int, err error) {
+	return fmt.Printf("VERBOSE "+format+"\n", a...)
+}
+
+func VW(workerId int, format string, a ...interface{}) (n int, err error) {
+	return V(fmt.Sprintf("[%d] ", workerId)+format, a...)
 }
