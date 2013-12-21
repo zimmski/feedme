@@ -232,7 +232,7 @@ func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMe
 
 		s := element.Find(selector)
 		if s == nil {
-			return nil, newError("No item found")
+			return nil, newError("No element %s found", selector)
 		}
 
 		for _, d := range do {
@@ -249,7 +249,7 @@ func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMe
 
 		attrValue, ok := element.Attr(selector)
 		if !ok {
-			return nil, newError("No attr found")
+			return nil, newError("No attribute %s found", selector)
 		}
 
 		for _, d := range do {
@@ -283,6 +283,10 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 	var err error
 
 	if rawRegex, ok := rawTransform["regex"]; ok {
+		if _, ok := rawTransform["matches"]; !ok {
+			return newError("regex node requires a matches attribute")
+		}
+
 		var transformMatches []map[string]string
 		err = json.Unmarshal(*rawTransform["matches"], &transformMatches)
 		if err != nil {
@@ -306,6 +310,13 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 		}
 
 		for i := 0; i < len(transformMatches); i++ {
+			if _, ok := transformMatches[i]["name"]; !ok {
+				return newError("match needs a name attribute")
+			}
+			if _, ok := transformMatches[i]["type"]; !ok {
+				return newError("match needs a type attribute")
+			}
+
 			var name = transformMatches[i]["name"]
 			var typ = transformMatches[i]["type"]
 
@@ -321,6 +332,13 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 			}
 		}
 	} else if _, ok := rawTransform["copy"]; ok {
+		if _, ok := rawTransform["name"]; !ok {
+			return newError("copy needs a name attribute")
+		}
+		if _, ok := rawTransform["type"]; !ok {
+			return newError("copy needs a type attribute")
+		}
+
 		name, err := jsonString(rawTransform["name"])
 		if err != nil {
 			return err
@@ -389,6 +407,10 @@ func jsonSelectNode(rawTransform map[string]*json.RawMessage, rawSelector *json.
 	selector, err := jsonString(rawSelector)
 	if err != nil {
 		return "", nil, err
+	}
+
+	if _, ok := rawTransform["do"]; !ok {
+		return "", nil, newError("select node needs a do attribute")
 	}
 
 	do, err := jsonArray(rawTransform["do"])
