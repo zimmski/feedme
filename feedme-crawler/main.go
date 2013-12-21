@@ -228,6 +228,20 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 				return err
 			}
 		}
+	} else if raw, ok := rawTransform["text"]; ok {
+		items, _, err := jsonNode(raw)
+		if err != nil {
+			return err
+		}
+
+		text := element.Text()
+
+		for _, i := range items {
+			err = crawlAttrValue(text, i, item)
+			if err != nil {
+				return err
+			}
+		}
 	} else {
 		return errors.New(fmt.Sprintf("Do not know how to transform Node %+v", rawTransform))
 	}
@@ -235,7 +249,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 	return nil
 }
 
-func crawlAttrValue(attrValue string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
+func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
 	var err error
 
 	if raw, ok := rawTransform["regex"]; ok {
@@ -251,7 +265,7 @@ func crawlAttrValue(attrValue string, rawTransform map[string]*json.RawMessage, 
 		}
 
 		re := regexp.MustCompile(reg)
-		var matches = re.FindStringSubmatch(attrValue)
+		var matches = re.FindStringSubmatch(value)
 
 		if matches == nil {
 			return errors.New("No matches found")
@@ -289,11 +303,11 @@ func crawlAttrValue(attrValue string, rawTransform map[string]*json.RawMessage, 
 
 		switch typ {
 		case "int":
-			v, _ := strconv.Atoi(attrValue)
+			v, _ := strconv.Atoi(value)
 
 			item[name] = v
 		case "string":
-			item[name] = attrValue
+			item[name] = value
 		default:
 			return errors.New(fmt.Sprintf("Unknown type %s", typ))
 		}
@@ -327,6 +341,10 @@ func jsonHash(raw *json.RawMessage) (map[string]*json.RawMessage, error) {
 }
 
 func jsonString(raw *json.RawMessage) (string, error) {
+	if raw == nil {
+		return "", nil
+	}
+
 	var s string
 
 	err := json.Unmarshal(*raw, &s)

@@ -1,0 +1,46 @@
+{
+  "items": [
+    {
+      "search": {
+        "selector": "#archiv_woche ul li",
+        "do": [
+          {
+            "find": {
+              "selector": "a",
+              "do": [
+                {
+                  "text": {
+                    "do": [
+                      {
+                        "copy": true,
+                        "name": "title",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                {
+                  "attr": {
+                    "selector": "href",
+                    "do": [
+                      {
+                        "copy": true,
+                        "name": "uri",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "transform": {
+    "title": "{{.title}}",
+    "uri": "{{.uri}}/",
+    "description": "{{.title}}"
+  }
+}

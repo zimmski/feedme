@@ -153,9 +153,23 @@ Attr selects exactly one attribute of the parents element and can only contain s
 }
 ```
 
+**text**
+
+Text extracts the combined text contents of the current node and its children.
+
+```json
+{
+	"text": {
+		"do": [
+		]
+	}
+}
+```
+
 ### Storing nodes
 
 **copy**
+
 Copy copies the attribute value direclty for the feed item transformation.
 
 ```json
