@@ -124,42 +124,42 @@ func main() {
 		var items []feedme.Item
 
 		for _, rawTransform := range jsonItems {
-			item := make(map[string]interface{})
-
-			err = crawlNode(doc.Selection, rawTransform, item)
+			itemValues, err := crawlNode(doc.Selection, rawTransform, nil)
 			if err != nil {
 				E("Cannot transform website: %s\n", err.Error())
 
 				goto BADFEED
 			}
 
-			feedItem := feedme.Item{}
+			for _, itemValue := range itemValues {
+				feedItem := feedme.Item{}
 
-			for name, t := range transformTemplates {
-				var out bytes.Buffer
-				t.Execute(&out, item)
-				s := out.String()
+				for name, t := range transformTemplates {
+					var out bytes.Buffer
+					t.Execute(&out, itemValue)
+					s := out.String()
 
-				switch name {
-				case "description":
-					feedItem.Description = s
-				case "title":
-					feedItem.Title = s
-				case "uri":
-					feedItem.Uri = s
-				default:
-					E("Unkown field %s\n", name)
+					switch name {
+					case "description":
+						feedItem.Description = s
+					case "title":
+						feedItem.Title = s
+					case "uri":
+						feedItem.Uri = s
+					default:
+						E("Unkown field %s\n", name)
 
-					goto BADFEED
-				}
-			}
-
-			if feedItem.Title != "" && feedItem.Uri != "" {
-				if opts.Verbose {
-					V("Found item %+v\n", feedItem)
+						goto BADFEED
+					}
 				}
 
-				items = append(items, feedItem)
+				if feedItem.Title != "" && feedItem.Uri != "" {
+					if opts.Verbose {
+						V("Found item %+v\n", feedItem)
+					}
+
+					items = append(items, feedItem)
+				}
 			}
 		}
 
@@ -176,80 +176,97 @@ func main() {
 	os.Exit(RET_OK)
 }
 
-func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
+func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMessage, itemValues []map[string]interface{}) ([]map[string]interface{}, error) {
+	baseSelection := false
+
+	if itemValues == nil {
+		baseSelection = true
+
+		itemValues = make([]map[string]interface{}, 1)
+		// TODO finde out why this is needed as itemValues with make of length 1 has already a map shown printed with %+v. But it is nil if it is accessed
+		itemValues[0] = make(map[string]interface{})
+	}
+
 	if raw, ok := rawTransform["search"]; ok {
-		items, selector, err := jsonNode(raw)
+		do, selector, err := jsonNode(raw)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		element.Find(selector).Each(func(i int, s *goquery.Selection) {
-			for _, i := range items {
-				err = crawlNode(s, i, item)
+		nodes := element.Find(selector)
+
+		nodes.Each(func(i int, s *goquery.Selection) {
+			for _, d := range do {
+				_, err = crawlNode(s, d, itemValues)
 				if err != nil {
 					return
 				}
 			}
+
+			if baseSelection && i != nodes.Length()-1 {
+				fmt.Printf("new item value\n")
+				itemValues = append(itemValues, make(map[string]interface{}))
+			}
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
 	} else if raw, ok := rawTransform["find"]; ok {
-		items, selector, err := jsonNode(raw)
+		do, selector, err := jsonNode(raw)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		s := element.Find(selector)
 		if s == nil {
-			return errors.New("No item found")
+			return nil, errors.New("No item found")
 		}
 
-		for _, i := range items {
-			err = crawlNode(s, i, item)
+		for _, d := range do {
+			_, err = crawlNode(s, d, itemValues)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	} else if raw, ok := rawTransform["attr"]; ok {
-		items, selector, err := jsonNode(raw)
+		do, selector, err := jsonNode(raw)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		attrValue, ok := element.Attr(selector)
 		if !ok {
-			return errors.New("No attr found")
+			return nil, errors.New("No attr found")
 		}
 
-		for _, i := range items {
-			err = crawlAttrValue(attrValue, i, item)
+		for _, d := range do {
+			err = crawlAttrValue(attrValue, d, itemValues[len(itemValues)-1])
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	} else if raw, ok := rawTransform["text"]; ok {
-		items, _, err := jsonNode(raw)
+		do, _, err := jsonNode(raw)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		text := element.Text()
 
-		for _, i := range items {
-			err = crawlAttrValue(text, i, item)
+		for _, d := range do {
+			err = crawlAttrValue(text, d, itemValues[len(itemValues)-1])
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 	} else {
-		return errors.New(fmt.Sprintf("Do not know how to transform Node %+v", rawTransform))
+		return nil, errors.New(fmt.Sprintf("Do not know how to transform Node %+v", rawTransform))
 	}
 
-	return nil
+	return itemValues, nil
 }
 
-func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item map[string]interface{}) error {
+func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, itemValue map[string]interface{}) error {
 	var err error
 
 	if raw, ok := rawTransform["regex"]; ok {
@@ -283,9 +300,9 @@ func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item
 			case "int":
 				v, _ := strconv.Atoi(matches[i+1])
 
-				item[name] = v
+				itemValue[name] = v
 			case "string":
-				item[name] = matches[i+1]
+				itemValue[name] = matches[i+1]
 			default:
 				return errors.New(fmt.Sprintf("Unknown type %s", typ))
 			}
@@ -305,9 +322,9 @@ func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item
 		case "int":
 			v, _ := strconv.Atoi(value)
 
-			item[name] = v
+			itemValue[name] = v
 		case "string":
-			item[name] = value
+			itemValue[name] = value
 		default:
 			return errors.New(fmt.Sprintf("Unknown type %s", typ))
 		}
@@ -361,7 +378,7 @@ func jsonNode(raw *json.RawMessage) ([]map[string]*json.RawMessage, string, erro
 		return nil, "", err
 	}
 
-	items, err := jsonArray(node["do"])
+	do, err := jsonArray(node["do"])
 	if err != nil {
 		return nil, "", err
 	}
@@ -371,5 +388,5 @@ func jsonNode(raw *json.RawMessage) ([]map[string]*json.RawMessage, string, erro
 		return nil, "", err
 	}
 
-	return items, selector, nil
+	return do, selector, nil
 }
