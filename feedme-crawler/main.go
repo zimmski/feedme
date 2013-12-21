@@ -123,7 +123,7 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 	var transform map[string]string
 	err = json.Unmarshal(*raw["transform"], &transform)
 	if err != nil {
-		return newError("Cannot parse transform item: %s", err.Error())
+		return newError("Cannot parse transform element: %s", err.Error())
 	}
 
 	transformTemplates := make(map[string]*template.Template)
@@ -136,7 +136,7 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 
 	jsonItems, err := jsonArray(raw["items"])
 	if err != nil {
-		return newError("Cannot parse items item: %s", err.Error())
+		return newError("Cannot parse items element: %s", err.Error())
 	}
 
 	doc, err := goquery.NewDocument(feed.Url)
@@ -147,7 +147,7 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 	var items []feedme.Item
 
 	for _, rawTransform := range jsonItems {
-		itemValues, err := crawlNode(doc.Selection, rawTransform, nil)
+		itemValues, err := crawlSelect(doc.Selection, rawTransform, nil)
 		if err != nil {
 			return newError("Cannot transform website: %s", err.Error())
 		}
@@ -190,7 +190,7 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 	return nil
 }
 
-func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMessage, itemValues []map[string]interface{}) ([]map[string]interface{}, error) {
+func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMessage, itemValues []map[string]interface{}) ([]map[string]interface{}, error) {
 	baseSelection := false
 
 	if itemValues == nil {
@@ -202,7 +202,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 	}
 
 	if rawSelector, ok := rawTransform["search"]; ok {
-		selector, do, err := jsonNode(rawTransform, rawSelector)
+		selector, do, err := jsonSelectNode(rawTransform, rawSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +211,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 
 		nodes.Each(func(i int, s *goquery.Selection) {
 			for _, d := range do {
-				_, err = crawlNode(s, d, itemValues)
+				_, err = crawlSelect(s, d, itemValues)
 				if err != nil {
 					return
 				}
@@ -225,7 +225,7 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 			return nil, err
 		}
 	} else if rawSelector, ok := rawTransform["find"]; ok {
-		selector, do, err := jsonNode(rawTransform, rawSelector)
+		selector, do, err := jsonSelectNode(rawTransform, rawSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -236,13 +236,13 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 		}
 
 		for _, d := range do {
-			_, err = crawlNode(s, d, itemValues)
+			_, err = crawlSelect(s, d, itemValues)
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else if rawSelector, ok := rawTransform["attr"]; ok {
-		selector, do, err := jsonNode(rawTransform, rawSelector)
+		selector, do, err := jsonSelectNode(rawTransform, rawSelector)
 		if err != nil {
 			return nil, err
 		}
@@ -253,13 +253,13 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 		}
 
 		for _, d := range do {
-			err = crawlAttrValue(attrValue, d, itemValues[len(itemValues)-1])
+			err = crawlStore(attrValue, d, itemValues[len(itemValues)-1])
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else if _, ok := rawTransform["text"]; ok {
-		_, do, err := jsonNode(rawTransform, nil)
+		_, do, err := jsonSelectNode(rawTransform, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -267,19 +267,19 @@ func crawlNode(element *goquery.Selection, rawTransform map[string]*json.RawMess
 		text := element.Text()
 
 		for _, d := range do {
-			err = crawlAttrValue(text, d, itemValues[len(itemValues)-1])
+			err = crawlStore(text, d, itemValues[len(itemValues)-1])
 			if err != nil {
 				return nil, err
 			}
 		}
 	} else {
-		return nil, newError("Do not know how to transform Node %+v", rawTransform)
+		return nil, newError("Do not know how to transform %+v", rawTransform)
 	}
 
 	return itemValues, nil
 }
 
-func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, itemValue map[string]interface{}) error {
+func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValue map[string]interface{}) error {
 	var err error
 
 	if rawRegex, ok := rawTransform["regex"]; ok {
@@ -342,7 +342,7 @@ func crawlAttrValue(value string, rawTransform map[string]*json.RawMessage, item
 			return newError("Unknown type %s", typ)
 		}
 	} else {
-		return newError("Do not know how to transform Attrs %+v", rawTransform)
+		return newError("Do not know how to transform %+v", rawTransform)
 	}
 
 	return nil
@@ -385,7 +385,7 @@ func jsonString(raw *json.RawMessage) (string, error) {
 	return s, nil
 }
 
-func jsonNode(rawTransform map[string]*json.RawMessage, rawSelector *json.RawMessage) (string, []map[string]*json.RawMessage, error) {
+func jsonSelectNode(rawTransform map[string]*json.RawMessage, rawSelector *json.RawMessage) (string, []map[string]*json.RawMessage, error) {
 	selector, err := jsonString(rawSelector)
 	if err != nil {
 		return "", nil, err
