@@ -16,15 +16,15 @@ import (
 )
 
 const (
-	RET_OK = iota
-	RET_HELP
+	ReturnOk = iota
+	ReturnHelp
 )
 
 type FeedEnum int
 
 const (
-	FEED_ATOM FeedEnum = iota
-	FEED_RSS
+	FeedAtom FeedEnum = iota
+	FeedRSS
 )
 
 var opts struct {
@@ -94,7 +94,7 @@ func getFeedItems(feedName string) (*feeds.Feed, error) {
 
 	feeder := &feeds.Feed{
 		Title: feed.Name,
-		Link:  &feeds.Link{Href: feed.Url},
+		Link:  &feeds.Link{Href: feed.URL},
 	}
 
 	for _, i := range items {
@@ -103,9 +103,9 @@ func getFeedItems(feedName string) (*feeds.Feed, error) {
 		}
 
 		feeder.Add(&feeds.Item{
-			Id:          strconv.Itoa(i.Id),
+			Id:          strconv.Itoa(i.ID),
 			Title:       i.Title,
-			Link:        &feeds.Link{Href: fmt.Sprintf("%s%s", feed.Url, i.Uri)},
+			Link:        &feeds.Link{Href: fmt.Sprintf("%s%s", feed.URL, i.URI)},
 			Description: i.Description,
 			Created:     i.Created,
 		})
@@ -127,7 +127,7 @@ func handleItems(typ FeedEnum, res http.ResponseWriter, req *http.Request, param
 
 	var data string
 
-	if typ == FEED_ATOM {
+	if typ == FeedAtom {
 		data, err = feeder.ToAtom()
 	} else {
 		data, err = feeder.ToRss()
@@ -142,11 +142,11 @@ func handleItems(typ FeedEnum, res http.ResponseWriter, req *http.Request, param
 }
 
 func handleItemsAtom(res http.ResponseWriter, req *http.Request, params martini.Params) {
-	handleItems(FEED_ATOM, res, req, params)
+	handleItems(FeedAtom, res, req, params)
 }
 
 func handleItemsRss(res http.ResponseWriter, req *http.Request, params martini.Params) {
-	handleItems(FEED_RSS, res, req, params)
+	handleItems(FeedRSS, res, req, params)
 }
 
 func main() {
@@ -163,7 +163,7 @@ func main() {
 		} else {
 			p.WriteHelp(os.Stdout)
 
-			os.Exit(RET_HELP)
+			os.Exit(ReturnHelp)
 		}
 	}
 
@@ -201,5 +201,5 @@ func main() {
 
 	http.ListenAndServe(fmt.Sprintf(":%d", opts.Port), m)
 
-	os.Exit(RET_OK)
+	os.Exit(ReturnOk)
 }

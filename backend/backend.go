@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/zimmski/feedme"
@@ -27,7 +26,7 @@ type BackendParameters struct {
 func NewBackend(name string) (Backend, error) {
 	if name == "postgresql" {
 		return NewBackendPostgresql(), nil
-	} else {
-		return nil, errors.New(fmt.Sprintf("Unknown backend \"%s\"", name))
 	}
+
+	return nil, fmt.Errorf("unknown backend \"%s\"", name)
 }

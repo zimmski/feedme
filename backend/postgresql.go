@@ -2,7 +2,6 @@ package backend
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
@@ -24,12 +23,12 @@ func (p *Postgresql) Init(params BackendParameters) error {
 
 	p.Db, err = sqlx.Connect("postgres", params.Spec)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Cannot connect to database: %v", err))
+		return fmt.Errorf("cannot connect to database: %v", err)
 	}
 
 	err = p.Db.Ping()
 	if err != nil {
-		return errors.New(fmt.Sprintf("Cannot ping database: %v", err))
+		return fmt.Errorf("cannot ping database: %v", err)
 	}
 
 	p.Db.SetMaxIdleConns(params.MaxIdleConns)
@@ -47,7 +46,7 @@ func (p *Postgresql) CreateItems(feed *feedme.Feed, items []feedme.Item) error {
 	}
 
 	for _, i := range items {
-		_, err = tx.Exec("INSERT INTO items(feed, title, uri, description, created) SELECT $1, $2, $3, $4, CURRENT_TIMESTAMP WHERE NOT EXISTS(SELECT id FROM items WHERE feed = $1 AND title = $2 AND uri = $3 AND description = $4)", feed.Id, i.Title, i.Uri, i.Description)
+		_, err = tx.Exec("INSERT INTO items(feed, title, uri, description, created) SELECT $1, $2, $3, $4, CURRENT_TIMESTAMP WHERE NOT EXISTS(SELECT id FROM items WHERE feed = $1 AND title = $2 AND uri = $3 AND description = $4)", feed.ID, i.Title, i.URI, i.Description)
 		if err != nil {
 			return err
 		}
@@ -86,7 +85,7 @@ func (p *Postgresql) SearchFeeds() ([]feedme.Feed, error) {
 func (p *Postgresql) SearchItems(feed *feedme.Feed) ([]feedme.Item, error) {
 	items := []feedme.Item{}
 
-	err := p.Db.Select(&items, "SELECT * FROM items WHERE feed = $1 ORDER BY created LIMIT 10", feed.Id)
+	err := p.Db.Select(&items, "SELECT * FROM items WHERE feed = $1 ORDER BY created LIMIT 10", feed.ID)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

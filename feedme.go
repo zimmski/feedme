@@ -5,17 +5,17 @@ import (
 )
 
 type Feed struct {
-	Id        int    `json:"id"`
+	ID        int    `json:"id"`
 	Name      string `json:"name"`
-	Url       string `json:"url"`
+	URL       string `json:"url"`
 	Transform string `json:"transform"`
 }
 
 type Item struct {
 	Feed        int
-	Id          int
+	ID          int
 	Title       string
-	Uri         string
+	URI         string
 	Description string
 	Created     time.Time
 }

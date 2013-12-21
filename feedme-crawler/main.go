@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -19,8 +18,8 @@ import (
 )
 
 const (
-	RET_OK = iota
-	RET_HELP
+	ReturnOk = iota
+	ReturnHelp
 )
 
 var db backend.Backend
@@ -46,7 +45,7 @@ func main() {
 		} else {
 			p.WriteHelp(os.Stdout)
 
-			os.Exit(RET_HELP)
+			os.Exit(ReturnHelp)
 		}
 	}
 
@@ -82,7 +81,7 @@ func main() {
 					if ok {
 						err := processFeed(id, &feed)
 						if err != nil {
-							EW(id, err.Error())
+							logErrorWorker(id, err.Error())
 						}
 
 						consumeFeeds <- true
@@ -104,44 +103,44 @@ func main() {
 
 	close(feedQueue)
 
-	os.Exit(RET_OK)
+	os.Exit(ReturnOk)
 }
 
-func processFeed(workerId int, feed *feedme.Feed) error {
+func processFeed(workerID int, feed *feedme.Feed) error {
 	var err error
 
 	if opts.Verbose {
-		VW(workerId, "Fetch feed %s from %s", feed.Name, feed.Url)
+		logVerboseWorker(workerID, "fetch feed %s from %s", feed.Name, feed.URL)
 	}
 
 	var raw map[string]*json.RawMessage
 	err = json.Unmarshal([]byte(feed.Transform), &raw)
 	if err != nil {
-		return newError("Cannot parse transform JSON: %s", err.Error())
+		return fmt.Errorf("cannot parse transform JSON: %s", err.Error())
 	}
 
 	var transform map[string]string
 	err = json.Unmarshal(*raw["transform"], &transform)
 	if err != nil {
-		return newError("Cannot parse transform element: %s", err.Error())
+		return fmt.Errorf("cannot parse transform element: %s", err.Error())
 	}
 
 	transformTemplates := make(map[string]*template.Template)
 	for name, tem := range transform {
 		transformTemplates[name], err = template.New(name).Parse(tem)
 		if err != nil {
-			return newError("Cannot create transform template: %s", err.Error())
+			return fmt.Errorf("cannot create transform template: %s", err.Error())
 		}
 	}
 
 	jsonItems, err := jsonArray(raw["items"])
 	if err != nil {
-		return newError("Cannot parse items element: %s", err.Error())
+		return fmt.Errorf("cannot parse items element: %s", err.Error())
 	}
 
-	doc, err := goquery.NewDocument(feed.Url)
+	doc, err := goquery.NewDocument(feed.URL)
 	if err != nil {
-		return newError("Cannot open URL: %s", err.Error())
+		return fmt.Errorf("cannot open URL: %s", err.Error())
 	}
 
 	var items []feedme.Item
@@ -149,7 +148,7 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 	for _, rawTransform := range jsonItems {
 		itemValues, err := crawlSelect(doc.Selection, rawTransform, nil)
 		if err != nil {
-			return newError("Cannot transform website: %s", err.Error())
+			return fmt.Errorf("cannot transform website: %s", err.Error())
 		}
 
 		for _, itemValue := range itemValues {
@@ -166,15 +165,15 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 				case "title":
 					feedItem.Title = s
 				case "uri":
-					feedItem.Uri = s
+					feedItem.URI = s
 				default:
-					return newError("Unkown field %s", name)
+					return fmt.Errorf("unkown field %s", name)
 				}
 			}
 
-			if feedItem.Title != "" && feedItem.Uri != "" {
+			if feedItem.Title != "" && feedItem.URI != "" {
 				if opts.Verbose {
-					VW(workerId, "Found item %+v", feedItem)
+					logVerboseWorker(workerID, "found item %+v", feedItem)
 				}
 
 				items = append(items, feedItem)
@@ -184,7 +183,7 @@ func processFeed(workerId int, feed *feedme.Feed) error {
 
 	err = db.CreateItems(feed, items)
 	if err != nil {
-		return newError("Cannot insert items into database: %s", err.Error())
+		return fmt.Errorf("cannot insert items into database: %s", err.Error())
 	}
 
 	return nil
@@ -232,7 +231,7 @@ func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMe
 
 		s := element.Find(selector)
 		if s == nil {
-			return nil, newError("No element %s found", selector)
+			return nil, fmt.Errorf("no element %s found", selector)
 		}
 
 		for _, d := range do {
@@ -249,7 +248,7 @@ func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMe
 
 		attrValue, ok := element.Attr(selector)
 		if !ok {
-			return nil, newError("No attribute %s found", selector)
+			return nil, fmt.Errorf("no attribute %s found", selector)
 		}
 
 		for _, d := range do {
@@ -273,7 +272,7 @@ func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMe
 			}
 		}
 	} else {
-		return nil, newError("Do not know how to transform %+v", rawTransform)
+		return nil, fmt.Errorf("do not know how to transform %+v", rawTransform)
 	}
 
 	return itemValues, nil
@@ -284,7 +283,7 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 
 	if rawRegex, ok := rawTransform["regex"]; ok {
 		if _, ok := rawTransform["matches"]; !ok {
-			return newError("regex node requires a matches attribute")
+			return fmt.Errorf("regex node requires a matches attribute")
 		}
 
 		var transformMatches []map[string]string
@@ -302,19 +301,19 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 		var matches = re.FindStringSubmatch(value)
 
 		if matches == nil {
-			return newError("No matches found")
+			return fmt.Errorf("no matches found")
 		}
 
 		if len(matches)-1 != len(transformMatches) {
-			return newError("Unequal match count")
+			return fmt.Errorf("unequal match count")
 		}
 
 		for i := 0; i < len(transformMatches); i++ {
 			if _, ok := transformMatches[i]["name"]; !ok {
-				return newError("match needs a name attribute")
+				return fmt.Errorf("match needs a name attribute")
 			}
 			if _, ok := transformMatches[i]["type"]; !ok {
-				return newError("match needs a type attribute")
+				return fmt.Errorf("match needs a type attribute")
 			}
 
 			var name = transformMatches[i]["name"]
@@ -328,15 +327,15 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 			case "string":
 				itemValue[name] = matches[i+1]
 			default:
-				return newError("Unknown type %s", typ)
+				return fmt.Errorf("unknown type %s", typ)
 			}
 		}
 	} else if _, ok := rawTransform["copy"]; ok {
 		if _, ok := rawTransform["name"]; !ok {
-			return newError("copy needs a name attribute")
+			return fmt.Errorf("copy needs a name attribute")
 		}
 		if _, ok := rawTransform["type"]; !ok {
-			return newError("copy needs a type attribute")
+			return fmt.Errorf("copy needs a type attribute")
 		}
 
 		name, err := jsonString(rawTransform["name"])
@@ -357,10 +356,10 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 		case "string":
 			itemValue[name] = value
 		default:
-			return newError("Unknown type %s", typ)
+			return fmt.Errorf("unknown type %s", typ)
 		}
 	} else {
-		return newError("Do not know how to transform %+v", rawTransform)
+		return fmt.Errorf("do not know how to transform %+v", rawTransform)
 	}
 
 	return nil
@@ -410,7 +409,7 @@ func jsonSelectNode(rawTransform map[string]*json.RawMessage, rawSelector *json.
 	}
 
 	if _, ok := rawTransform["do"]; !ok {
-		return "", nil, newError("select node needs a do attribute")
+		return "", nil, fmt.Errorf("select node needs a do attribute")
 	}
 
 	do, err := jsonArray(rawTransform["do"])
@@ -421,22 +420,18 @@ func jsonSelectNode(rawTransform map[string]*json.RawMessage, rawSelector *json.
 	return selector, do, nil
 }
 
-func newError(format string, a ...interface{}) error {
-	return errors.New(fmt.Sprintf(format, a...))
-}
-
-func E(format string, a ...interface{}) (n int, err error) {
+func logError(format string, a ...interface{}) (n int, err error) {
 	return fmt.Printf("ERROR "+format+"\n", a...)
 }
 
-func EW(workerId int, format string, a ...interface{}) (n int, err error) {
-	return E(fmt.Sprintf("[%d] ", workerId)+format, a...)
+func logErrorWorker(workerID int, format string, a ...interface{}) (n int, err error) {
+	return logError(fmt.Sprintf("[%d] ", workerID)+format, a...)
 }
 
-func V(format string, a ...interface{}) (n int, err error) {
+func logVerbose(format string, a ...interface{}) (n int, err error) {
 	return fmt.Printf("VERBOSE "+format+"\n", a...)
 }
 
-func VW(workerId int, format string, a ...interface{}) (n int, err error) {
-	return V(fmt.Sprintf("[%d] ", workerId)+format, a...)
+func logVerboseWorker(workerID int, format string, a ...interface{}) (n int, err error) {
+	return logVerbose(fmt.Sprintf("[%d] ", workerID)+format, a...)
 }
