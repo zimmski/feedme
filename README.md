@@ -243,13 +243,9 @@ would parse the value of the given attribute and store the parsed values into <c
 							"attr": "src",
 							"do": [
 								{
-									"regex": "^(.+)$",
-									"matches": [
-										{
-											"name": "image",
-											"type": "string"
-										}
-									]
+									"copy": true,
+									"name": "image",
+									"type": "string"
 								}
 							]
 						}
