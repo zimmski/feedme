@@ -109,9 +109,7 @@ func main() {
 func processFeed(workerID int, feed *feedme.Feed) error {
 	var err error
 
-	if opts.Verbose {
-		logVerboseWorker(workerID, "fetch feed %s from %s", feed.Name, feed.URL)
-	}
+	logVerboseWorker(workerID, "fetch feed %s from %s", feed.Name, feed.URL)
 
 	var raw map[string]*json.RawMessage
 	err = json.Unmarshal([]byte(feed.Transform), &raw)
@@ -152,9 +150,7 @@ func processFeed(workerID int, feed *feedme.Feed) error {
 		}
 
 		if len(itemValues[len(itemValues)-1]) == 0 {
-			if opts.Verbose {
-				logVerboseWorker(workerID, "Nothing to transform")
-			}
+			logVerboseWorker(workerID, "Nothing to transform")
 
 			continue
 		}
@@ -180,9 +176,7 @@ func processFeed(workerID int, feed *feedme.Feed) error {
 			}
 
 			if feedItem.Title != "" && feedItem.URI != "" {
-				if opts.Verbose {
-					logVerboseWorker(workerID, "found item %+v", feedItem)
-				}
+				logVerboseWorker(workerID, "found item %+v", feedItem)
 
 				items = append(items, feedItem)
 			}
@@ -437,6 +431,10 @@ func logErrorWorker(workerID int, format string, a ...interface{}) (n int, err e
 }
 
 func logVerbose(format string, a ...interface{}) (n int, err error) {
+	if !opts.Verbose {
+		return 0, nil
+	}
+
 	return fmt.Printf("VERBOSE "+format+"\n", a...)
 }
 
