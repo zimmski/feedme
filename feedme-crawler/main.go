@@ -151,6 +151,14 @@ func processFeed(workerID int, feed *feedme.Feed) error {
 			return fmt.Errorf("cannot transform website: %s", err.Error())
 		}
 
+		if len(itemValues[len(itemValues)-1]) == 0 {
+			if opts.Verbose {
+				logVerboseWorker(workerID, "Nothing to transform")
+			}
+
+			continue
+		}
+
 		for _, itemValue := range itemValues {
 			feedItem := feedme.Item{}
 
@@ -216,7 +224,7 @@ func crawlSelect(element *goquery.Selection, rawTransform map[string]*json.RawMe
 				}
 			}
 
-			if baseSelection && i != nodes.Length()-1 {
+			if baseSelection && i != nodes.Length()-1 && len(itemValues[len(itemValues)-1]) != 0 {
 				itemValues = append(itemValues, make(map[string]interface{}))
 			}
 		})
