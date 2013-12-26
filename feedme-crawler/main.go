@@ -49,6 +49,10 @@ func main() {
 		}
 	}
 
+	if env := os.Getenv("FEEDMESPEC"); env != "" {
+		opts.Spec = env
+	}
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	db, err = backend.NewBackend("postgresql")

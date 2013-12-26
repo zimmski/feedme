@@ -282,6 +282,12 @@ Every <code>div.news</code> elements represents a feed item as the selection for
 
 The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
 
+**Environment variables**
+```
+FEEDMESPEC sets the --spec CLI argument through the environment
+```
+*Please note that CLI arguments overwrite settings from the environment.*
+
 ## feedme-server
 
 **CLI arguments**
@@ -297,6 +303,12 @@ The <code>--spec</code> argument uses the connection string parameter of the exc
 ```
 
 The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
+
+**Environment variables**
+```
+FEEDMESPEC sets the --spec CLI argument through the environment
+```
+*Please note that CLI arguments overwrite settings from the environment.*
 
 **Routes**
 

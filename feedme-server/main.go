@@ -167,6 +167,10 @@ func main() {
 		}
 	}
 
+	if env := os.Getenv("FEEDMESPEC"); env != "" {
+		opts.Spec = env
+	}
+
 	db, err = backend.NewBackend("postgresql")
 	if err != nil {
 		panic(err)
