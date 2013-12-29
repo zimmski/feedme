@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"reflect"
+	"regexp"
 	"strconv"
 
 	"github.com/codegangsta/martini"
@@ -92,6 +94,20 @@ func getFeedItems(feedName string) (*feeds.Feed, error) {
 		return nil, nil
 	}
 
+	reProtocol := regexp.MustCompile(`[a-zA-Z0-9+\-.]+://`)
+
+	u, err := url.Parse(feed.URL)
+	if err != nil {
+		return nil, err
+	}
+	u.RawQuery = ""
+	feedURL := u.String()
+	if feedURL[len(feedURL)-1] != '/' {
+		feedURL += "/"
+	}
+	u.Path = ""
+	feedURLWithoutPath := u.String()
+
 	feeder := &feeds.Feed{
 		Title: feed.Name,
 		Link:  &feeds.Link{Href: feed.URL},
@@ -102,10 +118,20 @@ func getFeedItems(feedName string) (*feeds.Feed, error) {
 			feeder.Updated = i.Created
 		}
 
+		var link string
+
+		if reProtocol.MatchString(i.URI) {
+			link = i.URI
+		} else if i.URI[0] == '/' {
+			link = fmt.Sprintf("%s%s", feedURLWithoutPath, i.URI)
+		} else {
+			link = fmt.Sprintf("%s%s", feedURL, i.URI)
+		}
+
 		feeder.Add(&feeds.Item{
 			Id:          strconv.Itoa(i.ID),
 			Title:       i.Title,
-			Link:        &feeds.Link{Href: fmt.Sprintf("%s%s", feed.URL, i.URI)},
+			Link:        &feeds.Link{Href: link},
 			Description: i.Description,
 			Created:     i.Created,
 		})
