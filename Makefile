@@ -1,4 +1,4 @@
-.PHONY: clean install lint
+.PHONY: clean fmt install lint
 
 clean:
 	go clean github.com/zimmski/feedme/feedme-crawler
