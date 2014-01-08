@@ -24,11 +24,12 @@ const (
 
 var db backend.Backend
 var opts struct {
-	MaxIdleConns int    `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
-	MaxOpenConns int    `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
-	Spec         string `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
-	Workers      int    `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
-	Verbose      bool   `short:"v" long:"verbose" description:"Print what is going on"`
+	Feeds        []string `long:"feed" description:"Fetch only the feed with this name (can be used more than once)"`
+	MaxIdleConns int      `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
+	MaxOpenConns int      `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
+	Spec         string   `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+	Workers      int      `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
+	Verbose      bool     `short:"v" long:"verbose" description:"Print what is going on"`
 }
 
 func main() {
@@ -69,7 +70,7 @@ func main() {
 		panic(err)
 	}
 
-	feeds, err := db.SearchFeeds()
+	feeds, err := db.SearchFeeds(opts.Feeds)
 	if err != nil {
 		panic(err)
 	}

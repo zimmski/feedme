@@ -13,7 +13,7 @@ type Backend interface {
 
 	FindFeed(feedName string) (*feedme.Feed, error)
 
-	SearchFeeds() ([]feedme.Feed, error)
+	SearchFeeds(feedNames []string) ([]feedme.Feed, error)
 	SearchItems(feed *feedme.Feed) ([]feedme.Item, error)
 }
 

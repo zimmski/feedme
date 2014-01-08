@@ -3,6 +3,7 @@ package backend
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -71,10 +72,24 @@ func (p *Postgresql) FindFeed(feedName string) (*feedme.Feed, error) {
 	return feed, err
 }
 
-func (p *Postgresql) SearchFeeds() ([]feedme.Feed, error) {
+func (p *Postgresql) SearchFeeds(feedNames []string) ([]feedme.Feed, error) {
 	feeds := []feedme.Feed{}
 
-	err := p.Db.Select(&feeds, "SELECT * FROM feeds ORDER BY name")
+	params := make([]interface{}, 0)
+	filter := ""
+
+	if feedNames != nil && len(feedNames) != 0 {
+		a := make([]string, len(feedNames))
+
+		for i, feedName := range feedNames {
+			a[i] = fmt.Sprintf("$%d", i+1)
+			params = append(params, feedName)
+		}
+
+		filter = "WHERE name IN (" + strings.Join(a, ",") + ")"
+	}
+
+	err := p.Db.Select(&feeds, "SELECT * FROM feeds "+filter+"ORDER BY name", params...)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}

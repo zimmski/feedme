@@ -271,6 +271,7 @@ Every <code>div.news</code> elements represents a feed item as the selection for
 **CLI arguments**
 
 ```
+      --feed=           Fetch only the feed with this name (can be used more than once)
       --max-idle-conns= Max idle connections of the database (10)
       --max-open-conns= Max open connections of the database (10)
   -s, --spec=           The database connection spec (dbname=feedme sslmode=disable)
@@ -280,7 +281,7 @@ Every <code>div.news</code> elements represents a feed item as the selection for
   -h, --help            Show this help message
 ```
 
-The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
+The crawler fetches per default all defined feeds. By using the <code>--feed</code> argument, which can be used more than once, it is possible to fetch only specific feeds. The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
 
 **Environment variables**
 ```

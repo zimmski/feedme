@@ -60,7 +60,7 @@ func checkNotFound(res http.ResponseWriter, item interface{}) bool {
 func handleFeeds(res http.ResponseWriter, req *http.Request) {
 	var err error
 
-	feeds, err := db.SearchFeeds()
+	feeds, err := db.SearchFeeds(nil)
 	if checkError(res, err) {
 		return
 	}
