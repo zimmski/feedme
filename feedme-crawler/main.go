@@ -28,6 +28,7 @@ var opts struct {
 	MaxIdleConns int      `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
 	MaxOpenConns int      `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
 	Spec         string   `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+	Threads      int      `short:"t" long:"threads" description:"Thread count for processing (Default is the systems CPU count)"`
 	Workers      int      `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
 	Verbose      bool     `short:"v" long:"verbose" description:"Print what is going on"`
 }
@@ -54,7 +55,10 @@ func main() {
 		opts.Spec = env
 	}
 
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	if opts.Threads < 0 {
+		opts.Threads = runtime.NumCPU()
+	}
+	runtime.GOMAXPROCS(opts.Threads)
 
 	db, err = backend.NewBackend("postgresql")
 	if err != nil {

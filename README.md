@@ -275,6 +275,7 @@ Every <code>div.news</code> elements represents a feed item as the selection for
       --max-idle-conns= Max idle connections of the database (10)
       --max-open-conns= Max open connections of the database (10)
   -s, --spec=           The database connection spec (dbname=feedme sslmode=disable)
+  -t, --threads=        Thread count for processing (Default is the systems CPU count)
   -w, --workers=        Worker count for processing feeds (1)
   -v, --verbose         Print what is going on
 
