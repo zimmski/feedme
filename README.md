@@ -107,6 +107,10 @@ For example
 ```
 would access the stored informations of <code>title</code> and <code>image</code> for each feed item.
 
+The following identifiers are defined per default and can be overwritten
+
+* date - The current date formatted in ISO 8601
+
 ### Selecting nodes
 
 Selecting nodes can be nested through their <code>do</code> element and can contain storing nodes.

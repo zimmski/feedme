@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strconv"
 	"text/template"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/jessevdk/go-flags"
@@ -166,6 +167,10 @@ func processFeed(workerID int, feed *feedme.Feed) error {
 
 		for _, itemValue := range itemValues {
 			feedItem := feedme.Item{}
+
+			if _, ok := itemValue["date"]; !ok {
+				itemValue["date"] = time.Now().Format("2006-01-02")
+			}
 
 			for name, t := range transformTemplates {
 				var out bytes.Buffer
