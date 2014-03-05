@@ -3,5 +3,7 @@
 This folder holds examples for different websites. If you like to add one please make a pull request.
 
 - [7days.heise.de - http://www.heise.de/newsticker/](7days.heise.de.json)
+- [der-flix.de-schoene-toechter	http://www.der-flix.de/schoene-toechter.html](der-flix.de-schoene-toechter.json)
 - [dilbert.com - http://dilbert.com/](dilbert.com.json)
+- [nichtlustig.de - http://nichtlustig.de/main.html](nichtlustig.de.json)
 - [ruthe.de - http://ruthe.de/](ruthe.de.json)

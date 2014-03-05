@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "find": "link[rel=image_src]",
+      "do": [
+        {
+          "attr": "href",
+          "do": [
+            {
+              "regex": "/(\\d+).jpg",
+              "matches": [
+                {
+                  "name": "date",
+                  "type": "int"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transform": {
+    "title": "Strip {{.date}}",
+    "uri": "/toondb/{{.date}}.html",
+    "description": "<img src=\"http://static.nichtlustig.de/comics/full/{{.date}}.jpg\"/> Strip {{.date}}"
+  }
+}

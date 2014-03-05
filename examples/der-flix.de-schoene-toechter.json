@@ -1,0 +1,66 @@
+{
+  "items": [
+    {
+      "search": "#mod_schoenetoechter_gallery",
+      "do": [
+        {
+          "find": "a",
+          "do": [
+            {
+              "attr": "href",
+              "do": [
+                {
+                  "regex": "\\?(.+)$",
+                  "matches": [
+                    {
+                      "name": "link",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "find": "img",
+          "do": [
+            {
+              "attr": "alt",
+              "do": [
+                {
+                  "regex": "^(.+)$",
+                  "matches": [
+                    {
+                      "name": "titel",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "attr": "src",
+              "do": [
+                {
+                  "regex": "^(.+)$",
+                  "matches": [
+                    {
+                      "name": "image",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transform": {
+    "title": "{{.titel}}",
+    "uri": "?{{.link}}}",
+    "description": "<img src=\"http://www.der-flix.de{{.image}}\"/> Strip {{.titel}}"
+  }
+}
