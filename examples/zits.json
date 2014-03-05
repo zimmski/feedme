@@ -1,0 +1,58 @@
+{
+  "items": [
+    {
+      "search": "#comic-wrap",
+      "do": [
+        {
+          "find": "#comicpanel",
+          "do": [
+            {
+              "search": "img",
+              "do": [
+                {
+                  "attr": "src",
+                  "do": [
+                    {
+                      "copy": true,
+                      "name": "image",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "find": "#comments-home",
+          "do": [
+            {
+              "find": "a",
+              "do": [
+                {
+                  "attr": "title",
+                  "do": [
+                    {
+                      "regex": "Comment on (.+)",
+                      "matches": [
+                        {
+                            "name": "date",
+                            "type": "string"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transform": {
+    "title": "Strip {{.date}}",
+    "uri": "{{.image}}",
+    "description": "<img src=\"{{.image}}\"/> Strip {{.date}}"
+  }
+}

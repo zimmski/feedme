@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "search": "#comicimage",
+      "do": [
+        {
+          "search": "img",
+          "do": [
+            {
+              "attr": "src",
+              "do": [
+                {
+                  "copy": true,
+                  "name": "image",
+                  "type": "string"
+                },
+                {
+                  "regex": "/(\\d+)\\.png",
+                  "matches": [
+                    {
+                      "name": "date",
+                      "type": "int"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transform": {
+    "title": "Strip {{.date}}",
+    "uri": "{{.image}}",
+    "description": "<img src=\"{{.image}}\"/> Strip {{.date}}"
+  }
+}
