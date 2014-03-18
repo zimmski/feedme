@@ -89,9 +89,9 @@ func main() {
 				select {
 				case feed, ok := <-feedQueue:
 					if ok {
-						err := processFeed(id, &feed)
+						err := processFeed(&feed, id)
 						if err != nil {
-							logErrorWorker(id, err.Error())
+							logErrorWorker(&feed, id, err.Error())
 						}
 
 						consumeFeeds <- true
@@ -116,10 +116,10 @@ func main() {
 	os.Exit(ReturnOk)
 }
 
-func processFeed(workerID int, feed *feedme.Feed) error {
+func processFeed(feed *feedme.Feed, workerID int) error {
 	var err error
 
-	logVerboseWorker(workerID, "fetch feed %s from %s", feed.Name, feed.URL)
+	logVerboseWorker(feed, workerID, "fetch feed %s from %s", feed.Name, feed.URL)
 
 	var raw map[string]*json.RawMessage
 	err = json.Unmarshal([]byte(feed.Transform), &raw)
@@ -160,7 +160,7 @@ func processFeed(workerID int, feed *feedme.Feed) error {
 		}
 
 		if len(itemValues[len(itemValues)-1]) == 0 {
-			logVerboseWorker(workerID, "Nothing to transform")
+			logVerboseWorker(feed, workerID, "Nothing to transform")
 
 			continue
 		}
@@ -190,7 +190,7 @@ func processFeed(workerID int, feed *feedme.Feed) error {
 			}
 
 			if feedItem.Title != "" && feedItem.URI != "" {
-				logVerboseWorker(workerID, "found item %+v", feedItem)
+				logVerboseWorker(feed, workerID, "found item %+v", feedItem)
 
 				items = append(items, feedItem)
 			}
@@ -440,8 +440,8 @@ func logError(format string, a ...interface{}) (n int, err error) {
 	return fmt.Printf("ERROR "+format+"\n", a...)
 }
 
-func logErrorWorker(workerID int, format string, a ...interface{}) (n int, err error) {
-	return logError(fmt.Sprintf("[%d] ", workerID)+format, a...)
+func logErrorWorker(feed *feedme.Feed, workerID int, format string, a ...interface{}) (n int, err error) {
+	return logError(fmt.Sprintf("%s [%d] ", feed.Name, workerID)+format, a...)
 }
 
 func logVerbose(format string, a ...interface{}) (n int, err error) {
@@ -452,6 +452,6 @@ func logVerbose(format string, a ...interface{}) (n int, err error) {
 	return fmt.Printf("VERBOSE "+format+"\n", a...)
 }
 
-func logVerboseWorker(workerID int, format string, a ...interface{}) (n int, err error) {
-	return logVerbose(fmt.Sprintf("[%d] ", workerID)+format, a...)
+func logVerboseWorker(feed *feedme.Feed, workerID int, format string, a ...interface{}) (n int, err error) {
+	return logVerbose(fmt.Sprintf("%s [%d] ", feed.Name, workerID)+format, a...)
 }
