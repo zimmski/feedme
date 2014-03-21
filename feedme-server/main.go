@@ -30,11 +30,15 @@ const (
 )
 
 var opts struct {
-	Logging      bool   `long:"enable-logging" description:"Enable request logging"`
-	MaxIdleConns int    `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
-	MaxOpenConns int    `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
-	Port         uint   `short:"p" long:"port" default:"9090" description:"HTTP port of the server"`
-	Spec         string `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+	Config       func(s string) error `long:"config" description:"INI config file" no-ini:"true"`
+	ConfigWrite  string               `long:"config-write" description:"Write all arguments to an INI config file and exit" no-ini:"true"`
+	Logging      bool                 `long:"enable-logging" description:"Enable request logging"`
+	MaxIdleConns int                  `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
+	MaxOpenConns int                  `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
+	Port         uint                 `short:"p" long:"port" default:"9090" description:"HTTP port of the server"`
+	Spec         string               `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+
+	configFile string
 }
 
 var db backend.Backend
@@ -180,7 +184,16 @@ func main() {
 
 	p := flags.NewNamedParser("feedme-server", flags.HelpFlag)
 	p.ShortDescription = "The feedme server"
-	p.AddGroup("Server arguments", "", &opts)
+
+	opts.Config = func(s string) error {
+		ini := flags.NewIniParser(p)
+
+		opts.configFile = s
+
+		return ini.ParseFile(s)
+	}
+
+	p.AddGroup("Server", "Server arguments", &opts)
 
 	_, err = p.ParseArgs(os.Args)
 	if err != nil {
@@ -195,6 +208,14 @@ func main() {
 
 	if env := os.Getenv("FEEDMESPEC"); env != "" {
 		opts.Spec = env
+	}
+
+	if opts.ConfigWrite != "" {
+		ini := flags.NewIniParser(p)
+
+		ini.WriteFile(opts.ConfigWrite, flags.IniIncludeComments|flags.IniIncludeDefaults|flags.IniCommentDefaults)
+
+		os.Exit(ReturnOk)
 	}
 
 	db, err = backend.NewBackend("postgresql")

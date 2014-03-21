@@ -25,13 +25,17 @@ const (
 
 var db backend.Backend
 var opts struct {
-	Feeds        []string `long:"feed" description:"Fetch only the feed with this name (can be used more than once)"`
-	MaxIdleConns int      `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
-	MaxOpenConns int      `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
-	Spec         string   `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
-	Threads      int      `short:"t" long:"threads" description:"Thread count for processing (Default is the systems CPU count)"`
-	Workers      int      `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
-	Verbose      bool     `short:"v" long:"verbose" description:"Print what is going on"`
+	Config       func(s string) error `long:"config" description:"INI config file" no-ini:"true"`
+	ConfigWrite  string               `long:"config-write" description:"Write all arguments to an INI config file and exit" no-ini:"true"`
+	Feeds        []string             `long:"feed" description:"Fetch only the feed with this name (can be used more than once)"`
+	MaxIdleConns int                  `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
+	MaxOpenConns int                  `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
+	Spec         string               `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+	Threads      int                  `short:"t" long:"threads" description:"Thread count for processing (Default is the systems CPU count)"`
+	Workers      int                  `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
+	Verbose      bool                 `short:"v" long:"verbose" description:"Print what is going on"`
+
+	configFile string
 }
 
 func main() {
@@ -39,7 +43,16 @@ func main() {
 
 	p := flags.NewNamedParser("feedme-crawler", flags.HelpFlag)
 	p.ShortDescription = "The feedme crawler"
-	p.AddGroup("Crawler arguments", "", &opts)
+
+	opts.Config = func(s string) error {
+		ini := flags.NewIniParser(p)
+
+		opts.configFile = s
+
+		return ini.ParseFile(s)
+	}
+
+	p.AddGroup("Crawler", "Crawler arguments", &opts)
 
 	_, err = p.ParseArgs(os.Args)
 	if err != nil {
@@ -54,6 +67,14 @@ func main() {
 
 	if env := os.Getenv("FEEDMESPEC"); env != "" {
 		opts.Spec = env
+	}
+
+	if opts.ConfigWrite != "" {
+		ini := flags.NewIniParser(p)
+
+		ini.WriteFile(opts.ConfigWrite, flags.IniIncludeComments|flags.IniIncludeDefaults|flags.IniCommentDefaults)
+
+		os.Exit(ReturnOk)
 	}
 
 	if opts.Threads < 0 {

@@ -275,6 +275,8 @@ Every <code>div.news</code> elements represents a feed item as the selection for
 **CLI arguments**
 
 ```
+      --config=         INI config file
+      --config-write=   Write all arguments to an INI config file and exit
       --feed=           Fetch only the feed with this name (can be used more than once)
       --max-idle-conns= Max idle connections of the database (10)
       --max-open-conns= Max open connections of the database (10)
@@ -299,6 +301,8 @@ FEEDMESPEC sets the --spec CLI argument through the environment
 **CLI arguments**
 
 ```
+      --config=         INI config file
+      --config-write=   Write all arguments to an INI config file and exit
       --enable-logging  Enable request logging
       --max-idle-conns= Max idle connections of the database (10)
       --max-open-conns= Max open connections of the database (10)
