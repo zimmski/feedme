@@ -46,11 +46,11 @@ Insert your feeds with the transformation definitions into the database and exec
 $GOBIN/feedme-crawler --verbose
 ```
 
-Test your feeds with your RSS reader or browser by going to http://localhost:9090/, http://localhost:9090/yourfeedname/atom and http://localhost:9090/yourfeedname/rss. If everything works you can run the crawler as cron job to refresh your feeds automatically.
+Test your feeds with your RSS reader or browser by going to http://localhost:9090/, http://localhost:9090/yourfeedname/atom and http://localhost:9090/yourfeedname/rss. If everything works you can run the crawler as cron job to update your feeds automatically.
 
 ## Add feeds to the database
 
-Currently there is no interface for inserting and editing feed definitions. You have to insert and update them manually through your favorite PostgreSQL interface. In the folder <code>/examples</code> you can find examples for transformations.
+Currently there is no UI for modifying feed definitions. You have to insert and update them manually through your favorite PostgreSQL interface. In the folder <code>/examples</code> you can find examples for transformations.
 
 For example [/examples/dilbert.com.json](/examples/dilbert.com.json) holds the transformation for the divine Dilbert comic. This definition will add the current comic image of the home page of dilbert.com if it does not already exists in the database.
 
@@ -290,11 +290,17 @@ Every <code>div.news</code> elements represents a feed item as the selection for
 
 The crawler fetches per default all defined feeds. By using the <code>--feed</code> argument, which can be used more than once, it is possible to fetch only specific feeds. The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
 
+**Configuration file**
+
+All CLI arguments can be defined via a INI configuration file which can be initialized via the <code>--config-write</code> argument and then used via the <code>--config</code> argument.
+
+*Please note that CLI arguments overwrite settings from the configuration file*
+
 **Environment variables**
 ```
 FEEDMESPEC sets the --spec CLI argument through the environment
 ```
-*Please note that CLI arguments overwrite settings from the environment.*
+*Please note that CLI arguments overwrite settings from the environment and the environment overwrites settings from the configuration file.*
 
 ## feedme-server
 
@@ -314,11 +320,15 @@ FEEDMESPEC sets the --spec CLI argument through the environment
 
 The <code>--spec</code> argument uses the connection string parameter of the excellent <code>pg</code> package. Please have a look at the [official documentation](http://godoc.org/github.com/lib/pq#hdr-Connection_String_Parameters) if you need different settings.
 
+**Configuration file**
+
+All CLI arguments can be defined via a INI configuration file which can be initialized via the <code>--config-write</code> argument and then used via the <code>--config</code> argument.
+
 **Environment variables**
 ```
 FEEDMESPEC sets the --spec CLI argument through the environment
 ```
-*Please note that CLI arguments overwrite settings from the environment.*
+*Please note that CLI arguments overwrite settings from the environment and the environment overwrites settings from the configuration file.*
 
 **Routes**
 
