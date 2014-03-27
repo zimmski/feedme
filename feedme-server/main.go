@@ -218,6 +218,14 @@ func main() {
 		os.Exit(ReturnOk)
 	}
 
+	if opts.MaxIdleConns < 0 {
+		opts.MaxIdleConns = 0
+	}
+
+	if opts.MaxOpenConns <= 0 {
+		opts.MaxOpenConns = 1
+	}
+
 	db, err = backend.NewBackend("postgresql")
 	if err != nil {
 		panic(err)

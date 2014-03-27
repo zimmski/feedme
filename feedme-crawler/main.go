@@ -77,9 +77,22 @@ func main() {
 		os.Exit(ReturnOk)
 	}
 
-	if opts.Threads < 0 {
+	if opts.MaxIdleConns < 0 {
+		opts.MaxIdleConns = 0
+	}
+
+	if opts.MaxOpenConns <= 0 {
+		opts.MaxOpenConns = 1
+	}
+
+	if opts.Threads <= 0 {
 		opts.Threads = runtime.NumCPU()
 	}
+
+	if opts.Workers < 0 {
+		opts.Workers = 1
+	}
+
 	runtime.GOMAXPROCS(opts.Threads)
 
 	db, err = backend.NewBackend("postgresql")
