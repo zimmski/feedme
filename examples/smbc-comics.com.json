@@ -15,7 +15,7 @@
                   "type": "string"
                 },
                 {
-                  "regex": "/(\\d+)\\.png",
+                  "regex": "/(\\d+)\\.[[:alpha:]]+\\z",
                   "matches": [
                     {
                       "name": "date",
