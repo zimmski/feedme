@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"regexp"
 	"runtime"
 	"strconv"
+	"strings"
 	"text/template"
 	"time"
 
@@ -31,11 +33,13 @@ var opts struct {
 	MaxIdleConns int                  `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
 	MaxOpenConns int                  `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
 	Spec         string               `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
+	TestFile     string               `long:"test-file" description:"Instead of fetching feed URLs the content of this file is transformed. The result is not saved into the database" no-ini:"true"`
 	Threads      int                  `short:"t" long:"threads" description:"Thread count for processing (Default is the systems CPU count)"`
 	Workers      int                  `short:"w" long:"workers" default:"1" description:"Worker count for processing feeds"`
 	Verbose      bool                 `short:"v" long:"verbose" description:"Print what is going on"`
 
 	configFile string
+	testFile   string
 }
 
 func main() {
@@ -94,6 +98,15 @@ func main() {
 	}
 
 	runtime.GOMAXPROCS(opts.Threads)
+
+	if opts.TestFile != "" {
+		c, err := ioutil.ReadFile(opts.TestFile)
+		if err != nil {
+			panic(err)
+		}
+
+		opts.testFile = string(c)
+	}
 
 	db, err = backend.NewBackend("postgresql")
 	if err != nil {
@@ -180,9 +193,18 @@ func processFeed(feed *feedme.Feed, workerID int) error {
 		return fmt.Errorf("cannot parse items element: %s", err.Error())
 	}
 
-	doc, err := goquery.NewDocument(feed.URL)
-	if err != nil {
-		return fmt.Errorf("cannot open URL: %s", err.Error())
+	var doc *goquery.Document
+
+	if opts.TestFile != "" {
+		doc, err = goquery.NewDocumentFromReader(strings.NewReader(opts.testFile))
+		if err != nil {
+			return fmt.Errorf("cannot process test file: %s", err.Error())
+		}
+	} else {
+		doc, err = goquery.NewDocument(feed.URL)
+		if err != nil {
+			return fmt.Errorf("cannot open URL: %s", err.Error())
+		}
 	}
 
 	var items []feedme.Item
@@ -231,9 +253,11 @@ func processFeed(feed *feedme.Feed, workerID int) error {
 		}
 	}
 
-	err = db.CreateItems(feed, items)
-	if err != nil {
-		return fmt.Errorf("cannot insert items into database: %s", err.Error())
+	if opts.TestFile == "" {
+		err = db.CreateItems(feed, items)
+		if err != nil {
+			return fmt.Errorf("cannot insert items into database: %s", err.Error())
+		}
 	}
 
 	return nil
