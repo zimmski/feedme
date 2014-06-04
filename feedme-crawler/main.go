@@ -30,6 +30,7 @@ var opts struct {
 	Config       func(s string) error `long:"config" description:"INI config file" no-ini:"true"`
 	ConfigWrite  string               `long:"config-write" description:"Write all arguments to an INI config file and exit" no-ini:"true"`
 	Feeds        []string             `long:"feed" description:"Fetch only the feed with this name (can be used more than once)"`
+	ListFeeds    bool                 `long:"list-feeds" description:"List all available feed names" no-ini:"true"`
 	MaxIdleConns int                  `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
 	MaxOpenConns int                  `long:"max-open-conns" default:"10" description:"Max open connections of the database"`
 	Spec         string               `short:"s" long:"spec" default:"dbname=feedme sslmode=disable" description:"The database connection spec"`
@@ -122,43 +123,54 @@ func main() {
 		panic(err)
 	}
 
-	feeds, err := db.SearchFeeds(opts.Feeds)
-	if err != nil {
-		panic(err)
-	}
+	if opts.ListFeeds {
+		feeds, err := db.SearchFeeds(nil)
+		if err != nil {
+			panic(err)
+		}
 
-	feedQueue := make(chan feedme.Feed)
-	consumeFeeds := make(chan bool, len(feeds))
+		for _, feed := range feeds {
+			fmt.Println(feed.Name)
+		}
+	} else {
+		feeds, err := db.SearchFeeds(opts.Feeds)
+		if err != nil {
+			panic(err)
+		}
 
-	for i := 0; i < opts.Workers; i++ {
-		go func(id int, feedQueue <-chan feedme.Feed, consumeFeeds chan<- bool) {
-			for {
-				select {
-				case feed, ok := <-feedQueue:
-					if ok {
-						err := processFeed(&feed, id)
-						if err != nil {
-							logErrorWorker(&feed, id, err.Error())
+		feedQueue := make(chan feedme.Feed)
+		consumeFeeds := make(chan bool, len(feeds))
+
+		for i := 0; i < opts.Workers; i++ {
+			go func(id int, feedQueue <-chan feedme.Feed, consumeFeeds chan<- bool) {
+				for {
+					select {
+					case feed, ok := <-feedQueue:
+						if ok {
+							err := processFeed(&feed, id)
+							if err != nil {
+								logErrorWorker(&feed, id, err.Error())
+							}
+
+							consumeFeeds <- true
+						} else {
+							return
 						}
-
-						consumeFeeds <- true
-					} else {
-						return
 					}
 				}
-			}
-		}(i, feedQueue, consumeFeeds)
-	}
+			}(i, feedQueue, consumeFeeds)
+		}
 
-	for _, feed := range feeds {
-		feedQueue <- feed
-	}
+		for _, feed := range feeds {
+			feedQueue <- feed
+		}
 
-	for i := 0; i < len(feeds); i++ {
-		<-consumeFeeds
-	}
+		for i := 0; i < len(feeds); i++ {
+			<-consumeFeeds
+		}
 
-	close(feedQueue)
+		close(feedQueue)
+	}
 
 	os.Exit(ReturnOk)
 }
