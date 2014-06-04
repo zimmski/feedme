@@ -15,11 +15,11 @@
                   "type": "string"
                 },
                 {
-                  "regex": "/(\\d+)\\.[[:alpha:]]+\\z",
+                  "regex": "/([^/]+)\\.[[:alpha:]]+\\z",
                   "matches": [
                     {
-                      "name": "date",
-                      "type": "int"
+                      "name": "title",
+                      "type": "string"
                     }
                   ]
                 }
@@ -31,8 +31,8 @@
     }
   ],
   "transform": {
-    "title": "Strip {{.date}}",
+    "title": "Strip {{.title}}",
     "uri": "{{.image}}",
-    "description": "<img src=\"{{.image}}\"/> Strip {{.date}}"
+    "description": "<img src=\"{{.image}}\"/> Strip {{.title}}"
   }
 }
