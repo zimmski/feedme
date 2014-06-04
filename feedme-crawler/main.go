@@ -28,7 +28,7 @@ const (
 var db backend.Backend
 var opts struct {
 	Config       func(s string) error `long:"config" description:"INI config file" no-ini:"true"`
-	ConfigWrite  string               `long:"config-write" description:"Write all arguments to an INI config file and exit" no-ini:"true"`
+	ConfigWrite  string               `long:"config-write" description:"Write all arguments to an INI config file or to STDOUT with \"-\" as argument" no-ini:"true"`
 	Feeds        []string             `long:"feed" description:"Fetch only the feed with this name (can be used more than once)"`
 	ListFeeds    bool                 `long:"list-feeds" description:"List all available feed names" no-ini:"true"`
 	MaxIdleConns int                  `long:"max-idle-conns" default:"10" description:"Max idle connections of the database"`
@@ -77,7 +77,13 @@ func main() {
 	if opts.ConfigWrite != "" {
 		ini := flags.NewIniParser(p)
 
-		ini.WriteFile(opts.ConfigWrite, flags.IniIncludeComments|flags.IniIncludeDefaults|flags.IniCommentDefaults)
+		var iniOptions flags.IniOptions = flags.IniIncludeComments | flags.IniIncludeDefaults | flags.IniCommentDefaults
+
+		if opts.ConfigWrite == "-" {
+			(ini.Write(os.Stdout, iniOptions))
+		} else {
+			ini.WriteFile(opts.ConfigWrite, iniOptions)
+		}
 
 		os.Exit(ReturnOk)
 	}
