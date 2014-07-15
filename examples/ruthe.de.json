@@ -10,7 +10,7 @@
               "attr": "href",
               "do": [
                 {
-                  "regex": "id=(\\d+)",
+                  "regex": "archiv\/(\\d+)\/",
                   "matches": [
                     {
                       "name": "id",
@@ -42,7 +42,7 @@
   ],
   "transform": {
     "title": "Strip {{.id}}",
-    "uri": "/index.php?pic={{.id}}",
-    "description": "<img src=\"http://www.ruthe.de/{{.image}}\"/> Strip {{.id}}"
+    "uri": "http://ruthe.de/cartoon/{{.id}}/datum/asc/",
+    "description": "<img src=\"http://www.ruthe.de{{.image}}\"/> Strip {{.id}}"
   }
 }
