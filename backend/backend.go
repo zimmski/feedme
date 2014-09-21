@@ -7,7 +7,7 @@ import (
 )
 
 type Backend interface {
-	Init(params BackendParameters) error
+	Init(params Parameters) error
 
 	CreateItems(feed *feedme.Feed, items []feedme.Item) error
 
@@ -17,7 +17,7 @@ type Backend interface {
 	SearchItems(feed *feedme.Feed) ([]feedme.Item, error)
 }
 
-type BackendParameters struct {
+type Parameters struct {
 	Spec         string
 	MaxIdleConns int
 	MaxOpenConns int

@@ -237,7 +237,7 @@ func main() {
 		panic(err)
 	}
 
-	params := backend.BackendParameters{
+	params := backend.Parameters{
 		Spec:         opts.Spec,
 		MaxIdleConns: opts.MaxIdleConns,
 		MaxOpenConns: opts.MaxOpenConns,

@@ -19,7 +19,7 @@ func NewBackendPostgresql() Backend {
 	return new(Postgresql)
 }
 
-func (p *Postgresql) Init(params BackendParameters) error {
+func (p *Postgresql) Init(params Parameters) error {
 	var err error
 
 	p.Db, err = sqlx.Connect("postgres", params.Spec)
@@ -75,7 +75,7 @@ func (p *Postgresql) FindFeed(feedName string) (*feedme.Feed, error) {
 func (p *Postgresql) SearchFeeds(feedNames []string) ([]feedme.Feed, error) {
 	feeds := []feedme.Feed{}
 
-	params := make([]interface{}, 0)
+	var params []interface{}
 	filter := ""
 
 	if feedNames != nil && len(feedNames) != 0 {

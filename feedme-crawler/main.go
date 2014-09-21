@@ -120,7 +120,7 @@ func main() {
 		panic(err)
 	}
 
-	err = db.Init(backend.BackendParameters{
+	err = db.Init(backend.Parameters{
 		Spec:         opts.Spec,
 		MaxIdleConns: opts.MaxIdleConns,
 		MaxOpenConns: opts.MaxOpenConns,
