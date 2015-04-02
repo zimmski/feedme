@@ -1,29 +1,34 @@
 {
   "items": [
     {
-      "search": "#comicimage",
+      "search": "#comic",
       "do": [
         {
-          "search": "img",
+          "attr": "src",
           "do": [
             {
-              "attr": "src",
-              "do": [
+              "copy": true,
+              "name": "image",
+              "type": "string"
+            },
+            {
+              "regex": "/([^/]+)\\.[[:alpha:]]+\\z",
+              "matches": [
                 {
-                  "copy": true,
-                  "name": "image",
+                  "name": "title",
                   "type": "string"
-                },
-                {
-                  "regex": "/([^/]+)\\.[[:alpha:]]+\\z",
-                  "matches": [
-                    {
-                      "name": "title",
-                      "type": "string"
-                    }
-                  ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "attr": "title",
+          "do": [
+            {
+              "copy": true,
+              "name": "title",
+              "type": "string"
             }
           ]
         }
@@ -33,6 +38,6 @@
   "transform": {
     "title": "Strip {{.title}}",
     "uri": "{{.image}}",
-    "description": "<img src=\"{{.image}}\"/> Strip {{.title}}"
+    "description": "<img src=\"http://smbc-comics.com/{{.image}}\"/> Strip {{.title}}"
   }
 }

@@ -1,16 +1,39 @@
 {
   "items": [
     {
-      "search": "div.STR_Image",
+      "search": "div.comic-item-container",
       "do": [
         {
-          "find": "a",
+          "find": "a.img-comic-link",
           "do": [
+            {
+              "attr": "title",
+              "do": [
+                {
+                  "regex": "Click to see the comic strip (.*)",
+                  "matches": [
+                    {
+                      "name": "title",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            },
             {
               "attr": "href",
               "do": [
                 {
-                  "regex": "/strips/comic/(.+)/",
+                  "regex": "http://dilbert\\.com(.+)",
+                  "matches": [
+                    {
+                      "name": "uri",
+                      "type": "string"
+                    }
+                  ]
+                },
+                {
+                  "regex": "http://dilbert\\.com/strip/(.+)",
                   "matches": [
                     {
                       "name": "date",
@@ -23,7 +46,7 @@
           ]
         },
         {
-          "find": "img",
+          "find": "img.img-comic",
           "do": [
             {
               "attr": "src",
@@ -41,8 +64,8 @@
     }
   ],
   "transform": {
-    "title": "Strip {{.date}}",
-    "uri": "/strips/comic/{{.date}}/",
-    "description": "<img src=\"http://dilbert.com{{.image}}\"/> Strip {{.date}}"
+    "title": "Strip {{.date}} - {{.title}}",
+    "uri": "{{.uri}}",
+    "description": "<img src=\"{{.image}}\"/> Strip {{.date}}"
   }
 }

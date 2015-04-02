@@ -214,6 +214,8 @@ func processFeed(feed *feedme.Feed, workerID int) error {
 	var doc *goquery.Document
 
 	if opts.TestFile != "" {
+		logVerboseWorker(feed, workerID, "use test file")
+
 		doc, err = goquery.NewDocumentFromReader(strings.NewReader(opts.testFile))
 		if err != nil {
 			return fmt.Errorf("cannot process test file: %s", err.Error())
@@ -393,7 +395,7 @@ func crawlStore(value string, rawTransform map[string]*json.RawMessage, itemValu
 		var matches = re.FindStringSubmatch(value)
 
 		if matches == nil {
-			return fmt.Errorf("no matches found")
+			return fmt.Errorf("no matches found for %q in %q", reg, value)
 		}
 
 		if len(matches)-1 != len(transformMatches) {
