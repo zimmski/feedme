@@ -1,49 +1,15 @@
 {
   "items": [
     {
-      "search": "#comic-wrap",
+      "search": "#comic-zoom",
       "do": [
         {
-          "find": "#comicpanel",
+          "attr": "src",
           "do": [
             {
-              "search": "img",
-              "do": [
-                {
-                  "attr": "src",
-                  "do": [
-                    {
-                      "copy": true,
-                      "name": "image",
-                      "type": "string"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "find": "#comments-home",
-          "do": [
-            {
-              "find": "a",
-              "do": [
-                {
-                  "attr": "title",
-                  "do": [
-                    {
-                      "regex": "Comment on (.+)",
-                      "matches": [
-                        {
-                            "name": "date",
-                            "type": "string"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+              "copy": true,
+              "name": "image",
+              "type": "string"
             }
           ]
         }
@@ -52,7 +18,7 @@
   ],
   "transform": {
     "title": "Strip {{.date}}",
-    "uri": "{{.image}}",
-    "description": "<img src=\"{{.image}}\"/> Strip {{.date}}"
+    "uri": "http://www.arcamax.com{{.image}}",
+    "description": "<img src=\"http://www.arcamax.com{{.image}}\"/> Strip {{.date}}"
   }
 }
