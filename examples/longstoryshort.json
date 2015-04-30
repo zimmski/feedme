@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "search": "#comic-zoom",
+      "do": [
+        {
+          "attr": "src",
+          "do": [
+            {
+              "copy": true,
+              "name": "image",
+              "type": "string"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transform": {
+    "title": "Strip {{.date}}",
+    "uri": "http://www.arcamax.com/{{.image}}}",
+    "description": "<img src=\"http://www.arcamax.com/{{.image}}}\"/> Strip {{.titel}}"
+  }
+}
