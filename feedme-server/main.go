@@ -258,7 +258,10 @@ func main() {
 	r := martini.NewRouter()
 	ma.Action(r.Handle)
 
-	m := martini.ClassicMartini{ma, r}
+	m := martini.ClassicMartini{
+		Martini: ma,
+		Router:  r,
+	}
 
 	m.Get("/", handleFeeds)
 	m.Get("/:feed/atom", handleItemsAtom)
