@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "search": "#mod_heldentage",
+      "do": [
+        {
+          "find": "img[alt=Heldentag]",
+          "do": [
+            {
+              "attr": "src",
+              "do": [
+                {
+                  "regex": "Tag_(\\d+).jpg$",
+                  "matches": [
+                    {
+                      "name": "number",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "attr": "src",
+              "do": [
+                {
+                  "regex": "^(.+)$",
+                  "matches": [
+                    {
+                      "name": "image",
+                      "type": "string"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transform": {
+    "title": "Heldentag {{.number}}",
+    "uri": "http://www.der-flix.de{{.image}}",
+    "description": "<img src=\"http://www.der-flix.de{{.image}}\"/>"
+  }
+}
