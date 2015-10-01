@@ -8,4 +8,4 @@ This folder holds examples for different websites. If you like to add one please
 - [nichtlustig.de - http://nichtlustig.de/main.html](nichtlustig.de.json)
 - [ruthe.de - http://ruthe.de/](ruthe.de.json)
 - [smbc-comics.com - http://www.smbc-comics.com/](smbc-comics.com.json)
-- [zits - http://zitscomics.com/](zits.json)
+- [zits - http://www.arcamax.com/thefunnies/zits/](zits.json)
