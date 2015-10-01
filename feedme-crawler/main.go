@@ -266,9 +266,15 @@ func processFeed(feed *feedme.Feed, workerID int) error {
 			}
 
 			if feedItem.Title != "" && feedItem.URI != "" {
-				logVerboseWorker(feed, workerID, "found item %+v", feedItem)
+				if item, err := db.FindItemByURI(feed, feedItem.URI); err != nil {
+					logVerboseWorker(feed, workerID, "error finding item %+v in feed %+v: %v", feedItem, feed, err)
+				} else if item != nil {
+					logVerboseWorker(feed, workerID, "item %+v already exists", feedItem)
+				} else {
+					logVerboseWorker(feed, workerID, "found item %+v", feedItem)
 
-				items = append(items, feedItem)
+					items = append(items, feedItem)
+				}
 			}
 		}
 	}

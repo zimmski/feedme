@@ -12,8 +12,9 @@ type Backend interface {
 	CreateItems(feed *feedme.Feed, items []feedme.Item) error
 
 	FindFeed(feedName string) (*feedme.Feed, error)
-
 	SearchFeeds(feedNames []string) ([]feedme.Feed, error)
+
+	FindItemByURI(feed *feedme.Feed, uri string) (*feedme.Item, error)
 	SearchItems(feed *feedme.Feed) ([]feedme.Item, error)
 }
 

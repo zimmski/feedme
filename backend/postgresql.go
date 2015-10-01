@@ -97,6 +97,17 @@ func (p *Postgresql) SearchFeeds(feedNames []string) ([]feedme.Feed, error) {
 	return feeds, err
 }
 
+func (p *Postgresql) FindItemByURI(feed *feedme.Feed, uri string) (*feedme.Item, error) {
+	item := &feedme.Item{}
+
+	err := p.Db.Get(item, "SELECT * FROM items WHERE feed = $1 AND uri = $2", feed.ID, uri)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	return item, err
+}
+
 func (p *Postgresql) SearchItems(feed *feedme.Feed) ([]feedme.Item, error) {
 	items := []feedme.Item{}
 
